@@ -691,274 +691,6 @@ body.focus-mode { overflow: hidden; }
         <div class="form-row">
           <mdui-select id="subjectSelect" variant="outlined" label="科目">
             <mdui-menu-item value="语文">语文</mdui-menu-item>
-            <mdui-menu-item value="数;
-  margin-top: 4px;
-}
-.focus-status {
-  margin-top: 16px;
-  font-size: clamp(13px, 2vw, 17px);
-  color: rgb(var(--mdui-color-on-surface-variant));
-}
-.focus-status.waiting { color: rgb(var(--mdui-color-primary)); }
-.focus-status.running { color: #059669; }
-.focus-status.ended   { color: #b45309; }
-
-/* 右上角小挂件 */
-.focus-pip {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 999994;
-  background: rgb(var(--mdui-color-surface-container));
-  border-radius: 16px;
-  padding: 12px 16px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
-  cursor: pointer;
-  transition: transform .2s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow .2s;
-  user-select: none;
-  max-width: 220px;
-  opacity: 0;
-  transform: scale(.85) translateY(-8px);
-  visibility: hidden;
-  pointer-events: none;
-}
-.focus-pip.active {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  visibility: visible;
-  pointer-events: auto;
-}
-.focus-pip:hover {
-  transform: scale(1.04) translateY(0);
-  box-shadow: 0 10px 30px rgba(0,0,0,.16), 0 3px 8px rgba(0,0,0,.08);
-}
-.focus-pip:active { transform: scale(.97); }
-.focus-pip-label {
-  font-size: 11px;
-  color: rgb(var(--mdui-color-on-surface-variant));
-  letter-spacing: 1px;
-  margin-bottom: 2px;
-}
-.focus-pip-clock {
-  font-size: 20px;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-  color: rgb(var(--mdui-color-on-surface));
-  line-height: 1.2;
-  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
-}
-.focus-pip-date {
-  font-size: 10px;
-  color: rgb(var(--mdui-color-on-surface-variant));
-  margin-top: 2px;
-}
-.focus-pip-name {
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-  margin-bottom: 2px;
-}
-.focus-pip-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.focus-pip-name.running { color: #059669; }
-.focus-pip-name.ended   { color: #b45309; }
-.focus-pip-cd {
-  font-size: 15px;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-  color: rgb(var(--mdui-color-primary));
-  white-space: nowrap;
-  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
-}
-.focus-pip-cd.urgent  { color: #dc2626; }
-.focus-pip-cd.running { color: #059669; }
-.focus-pip-cd.ended   { color: #b45309; }
-.focus-pip-status {
-  font-size: 11px;
-  color: rgb(var(--mdui-color-on-surface-variant));
-  margin-top: 2px;
-}
-
-/* 关闭按钮 */
-.focus-close {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 999995;
-  opacity: 0;
-  transform: scale(.85);
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity .25s, transform .25s, visibility 0s linear .25s;
-}
-.focus-overlay.active ~ .focus-close.active {
-  opacity: 1;
-  transform: scale(1);
-  visibility: visible;
-  pointer-events: auto;
-  transition: opacity .25s .15s, transform .25s .15s, visibility 0s linear 0s;
-}
-
-/* 提示文字 */
-.focus-hint {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 999994;
-  font-size: 12px;
-  color: rgb(var(--mdui-color-on-surface-variant));
-  background: rgb(var(--mdui-color-surface-container));
-  padding: 8px 18px;
-  border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.08);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity .25s, visibility 0s linear .25s;
-  white-space: nowrap;
-}
-.focus-overlay.active ~ .focus-hint.active {
-  opacity: .85;
-  visibility: visible;
-  transition: opacity .25s .3s, visibility 0s linear 0s;
-}
-
-@media (max-width: 480px) {
-  body { padding: 76px 12px 80px; }
-  .card { padding: 22px 18px 18px; }
-  .cd-row { gap: 6px; }
-  .cd-unit { min-width: 0; padding: 10px 4px 8px; }
-  .cd-num { font-size: 26px; }
-  .now-time { font-size: 38px; }
-  .exam-item { flex-wrap: wrap; }
-  .exam-cd { min-width: 0; }
-  .plan-page-content { padding: 16px 12px 70px; }
-  .focus-pip { top: 14px; right: 14px; padding: 10px 12px; max-width: 160px; }
-  .focus-pip-clock { font-size: 17px; }
-  .focus-pip-cd { font-size: 13px; }
-  .focus-pip-name { font-size: 12px; max-width: 130px; }
-  .focus-close { top: 14px; left: 14px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #morphLayer, .plan-page-content, .focus-overlay, .focus-pip, .focus-close, .focus-hint {
-    transition-duration: .01ms !important;
-    animation: none !important;
-  }
-}
-
-/* ========== 修复：自定义科目Dialog浮在plan-page-overlay上层 ========== */
-#customSubjectDialog {
-  --mdui-dialog-z-index: 999998 !important;
-  z-index: 999998 !important;
-}
-/* dialog 内部遮罩层 */
-#customSubjectDialog::part(overlay) {
-  z-index: 999998 !important;
-}
-/* dialog 内容面板 */
-#customSubjectDialog::part(panel) {
-  z-index: 999999 !important;
-}
-/* 给dialog的description插槽内容区域增加顶部内边距，解决第一个text‑field label被切 */
-#customSubjectDialog::part(description) {
-  padding-top: 12px !important;
-}
-
-
-</style>
-</head>
-<body>
-
-<!-- ==================== 顶栏 ==================== -->
-<mdui-top-app-bar class="app-top-bar" variant="small" scroll-behavior="shrink elevate">
-  <mdui-button-icon icon="schedule" disabled style="opacity:.85"></mdui-button-icon>
-  <mdui-top-app-bar-title>考试倒计时</mdui-top-app-bar-title>
-  <div style="flex-grow: 1"></div>
-  <div class="top-bar-actions">
-    <mdui-button-icon id="themeToggleBtn" icon="dark_mode" title="切换深浅色"></mdui-button-icon>
-  </div>
-</mdui-top-app-bar>
-
-<div class="app">
-  <br><br>
-  <!-- ==================== 主页（倒计时） ==================== -->
-  <main id="dashboardPage" class="page active">
-    <div class="card">
-      <div class="title">考试倒计时时钟</div>
-      <div class="now-time" id="nowTime" title="点击放大">--:--:--</div>
-      <div class="now-date" id="nowDate">----/--/--</div>
-      <div class="divider"></div>
-      <div class="main-label" id="mainLabel">当前状态</div>
-      <div class="main-name waiting" id="mainName">暂无考试安排</div>
-      <div class="cd-row" id="cdRow" title="点击放大">
-        <div class="cd-unit"><div class="cd-num" id="cdA">0</div><div class="cd-text" id="cdAT">天</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
-      </div>
-      <div class="status" id="status">请添加考试</div>
-      <mdui-button id="openPlanBtn" variant="filled" class="btn-primary" icon="edit_calendar">管理考试计划</mdui-button>
-    </div>
-  </main>
-</div>
-
-<!-- ==================== 焦点放大模式 ==================== -->
-<div id="focusOverlay" class="focus-overlay" aria-hidden="true">
-  <div class="focus-main" id="focusMain">
-    <div id="focusClockView" style="display:none">
-      <div class="focus-clock" id="focusClockTime">--:--:--</div>
-      <div class="focus-clock-date" id="focusClockDate">----/--/--</div>
-    </div>
-    <div id="focusCdView" style="display:none">
-      <div class="focus-cd-label" id="focusCdLabel">距离考试开始</div>
-      <div class="focus-cd-name" id="focusCdName">--</div>
-      <div class="focus-cd-row">
-        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdA">0</div><div class="focus-cd-text" id="focusCdAT">天</div></div>
-        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdB">00</div><div class="focus-cd-text" id="focusCdBT">时</div></div>
-        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdC">00</div><div class="focus-cd-text" id="focusCdCT">分</div></div>
-        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdD">00</div><div class="focus-cd-text" id="focusCdDT">秒</div></div>
-      </div>
-      <div class="focus-status" id="focusStatus">请添加考试</div>
-    </div>
-  </div>
-</div>
-<mdui-button-icon id="focusCloseBtn" class="focus-close" icon="close" title="退出放大"></mdui-button-icon>
-<div class="focus-hint" id="focusHint">点击右上角小组件以切换焦点</div>
-
-<!-- 右上角小挂件 -->
-<div id="focusPip" class="focus-pip" aria-hidden="true">
-  <div id="focusPipClockView" style="display:none">
-    <div class="focus-pip-label">时钟</div>
-    <div class="focus-pip-clock" id="focusPipClockTime">--:--:--</div>
-    <div class="focus-pip-date" id="focusPipClockDate">----/--/--</div>
-  </div>
-  <div id="focusPipCdView" style="display:none">
-    <div class="focus-pip-label" id="focusPipLabel">倒计时</div>
-    <div class="focus-pip-name waiting" id="focusPipName">--</div>
-    <div class="focus-pip-cd" id="focusPipCd">--:--:--</div>
-    <div class="focus-pip-status" id="focusPipStatus">--</div>
-  </div>
-</div>
-
-<!-- ==================== 计划管理副页面（一镜到底目标） ==================== -->
-<div id="planPageOverlay" class="plan-page-overlay" aria-hidden="true">
-  <div class="plan-page-content">
-    <div class="plan-inner">
-      <div class="plan-header">
-        <mdui-button-icon id="planCloseBtn" class="back-btn" icon="arrow_back" title="返回"></mdui-button-icon>
-        <h1 class="page-title">考试计划管理</h1>
-      </div>
-
-      <section class="card" aria-labelledby="addTitle">
-        <h2 class="list-title" id="addTitle">添加考试</h2>
-        <div class="form-row">
-          <mdui-select id="subjectSelect" variant="outlined" label="科目">
-            <mdui-menu-item value="语文">语文</mdui-menu-item>
             <mdui-menu-item value="数学">数学</mdui-menu-item>
             <mdui-menu-item value="英语">英语</mdui-menu-item>
             <mdui-menu-item value="物理">物理</mdui-menu-item>
@@ -1235,7 +967,7 @@ function render() {
 }
 
 /* =========================================================
-   一镜到底：计划管理页
+   一镜到底：计划管理页（可中断 + 任意方向滑动返回）
    ========================================================= */
 (function initMorph() {
   const openBtn = document.getElementById('openPlanBtn');
@@ -1252,6 +984,7 @@ function render() {
   const RADIUS_DELAY = prefersReducedMotion ? 0 : 120;
   const RADIUS_HOLD = prefersReducedMotion ? 0 : 48;
   const RADIUS_LEAD = prefersReducedMotion ? 0 : 80;
+  const RIPPLE_WAIT = prefersReducedMotion ? 0 : 100;
   const FADE = prefersReducedMotion ? 0 : 80;
   const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
   const FALLBACK_COLOR = '#006463';
@@ -1259,6 +992,20 @@ function render() {
   let morphState = 'idle';
   let animToken = 0;
   let radiusTimer = null;
+
+  /* 滚动锁定：防止计划页滑动穿透到底层 */
+  let savedHtmlOverflow = '';
+  let savedBodyOverflow = '';
+  function lockBodyScroll() {
+    savedHtmlOverflow = document.documentElement.style.overflow;
+    savedBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+  function unlockBodyScroll() {
+    document.documentElement.style.overflow = savedHtmlOverflow;
+    document.body.style.overflow = savedBodyOverflow;
+  }
 
   function getButtonColor() {
     const cs = getComputedStyle(openBtn);
@@ -1299,6 +1046,12 @@ function render() {
   function radiusTransition(delay) { return `border-radius ${RADIUS_TAIL}ms ${EASING} ${delay}ms`; }
   function clearRadiusTimer() { if (radiusTimer) { clearTimeout(radiusTimer); radiusTimer = null; } }
 
+  function currentMorphRect() {
+    const r = morphLayer.getBoundingClientRect();
+    const radius = parseFloat(getComputedStyle(morphLayer).borderRadius) || 0;
+    return { left: r.left, top: r.top, width: r.width, height: r.height, radius: radius + 'px' };
+  }
+
   function waitSize(el) {
     return new Promise((resolve) => {
       if (DURATION === 0) { resolve(); return; }
@@ -1311,10 +1064,10 @@ function render() {
   }
 
   async function openAnim() {
-    if (morphState !== 'idle') return;
     const token = ++animToken;
     morphState = 'opening';
     clearRadiusTimer();
+    clearGestureStyles();
 
     const rect = openBtn.getBoundingClientRect();
     const bg = getButtonColor();
@@ -1329,7 +1082,7 @@ function render() {
     setRect(el, rect, radius);
     void el.offsetWidth;
 
-    await new Promise((r) => setTimeout(r, prefersReducedMotion ? 0 : 100));
+    await new Promise((r) => setTimeout(r, RIPPLE_WAIT));
     if (token !== animToken) return;
 
     el.classList.add('visible');
@@ -1360,6 +1113,7 @@ function render() {
 
     morphState = 'open';
     document.body.classList.add('font-page-open');
+    lockBodyScroll();
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => { if (token === animToken) overlay.classList.add('content-in'); });
@@ -1373,13 +1127,14 @@ function render() {
     }, 300);
   }
 
-  async function closeAnim() {
-    if (morphState !== 'open') return;
+  async function closeAnim(fromInterrupt = false) {
     const token = ++animToken;
     morphState = 'closing';
     clearRadiusTimer();
-
     document.body.classList.remove('font-page-open');
+    unlockBodyScroll();
+    clearGestureStyles();
+
     overlay.classList.remove('content-in');
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
@@ -1392,13 +1147,20 @@ function render() {
 
     el.style.transition = 'none';
     el.style.display = 'block';
-    el.style.background = surface;
     el.style.opacity = '1';
-    el.style.left = '0px';
-    el.style.top = '0px';
-    el.style.width = window.innerWidth + 'px';
-    el.style.height = window.innerHeight + 'px';
-    el.style.borderRadius = '0px';
+
+    if (fromInterrupt) {
+      const cur = currentMorphRect();
+      el.style.background = getComputedStyle(el).backgroundColor;
+      setRect(el, cur, cur.radius);
+    } else {
+      el.style.background = surface;
+      el.style.left = '0px';
+      el.style.top = '0px';
+      el.style.width = window.innerWidth + 'px';
+      el.style.height = window.innerHeight + 'px';
+      el.style.borderRadius = '0px';
+    }
     void el.offsetWidth;
 
     el.classList.add('visible');
@@ -1417,6 +1179,9 @@ function render() {
     await waitSize(el);
     if (token !== animToken) return;
 
+    await new Promise((r) => setTimeout(r, DURATION));
+    if (token !== animToken) return;
+
     el.style.transition = 'opacity 180ms ease';
     el.style.opacity = '0';
     await new Promise((r) => setTimeout(r, 200));
@@ -1428,12 +1193,249 @@ function render() {
     morphState = 'idle';
   }
 
-  openBtn.addEventListener('click', openAnim);
-  closeBtn.addEventListener('click', closeAnim);
+  function cancelAnim() {
+    animToken++;
+    morphState = 'idle';
+    clearRadiusTimer();
+    document.body.classList.remove('font-page-open');
+    unlockBodyScroll();
+    const el = morphLayer;
+    el.style.transition = 'opacity 120ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.style.display = 'none';
+      el.classList.remove('visible');
+    }, 140);
+  }
+
+  function interrupt() {
+    if (morphState === 'opening') {
+      const btnRect = openBtn.getBoundingClientRect();
+      const layerRect = morphLayer.getBoundingClientRect();
+      const notExpanded =
+        Math.abs(layerRect.width  - btnRect.width)  < 5 &&
+        Math.abs(layerRect.height - btnRect.height) < 5;
+      if (notExpanded) cancelAnim();
+      else closeAnim(true);
+    } else if (morphState === 'closing') {
+      openAnim();
+    }
+  }
+
+  openBtn.addEventListener('click', () => {
+    if (morphState === 'opening' || morphState === 'closing') interrupt();
+    else if (morphState === 'idle') openAnim();
+  });
+  closeBtn.addEventListener('click', () => {
+    if (morphState === 'open') closeAnim();
+    else if (morphState === 'opening') closeAnim(true);
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && morphState === 'open') closeAnim();
   });
+
+/* =========================================================
+   滑动返回手势（任意方向，未达阈值回弹）
+   ========================================================= */
+const GESTURE_THRESHOLD = 8;
+const GESTURE_COMPLETE_RATIO = 0.25;
+const GESTURE_VELOCITY_THRESHOLD = 0.45;
+const GESTURE_MAX_SCALE_DOWN = 0.85;
+const GESTURE_SCALE_DISTANCE = 260;
+
+let gestureState = null;
+
+function isInteractiveTarget(el) {
+  return el && el.closest && el.closest(
+    'mdui-button, mdui-button-icon, mdui-select, mdui-menu-item, button, input, select, .drag-resizer'
+  );
+}
+
+function clearGestureStyles() {
+  overlay.style.transition = '';
+  overlay.style.transform = '';
+  overlay.style.opacity = '';
+  overlay.style.borderRadius = '';
+  overlay.style.transformOrigin = '';
+  overlay.style.willChange = '';
+  overlay.classList.remove('gesturing');
+}
+
+function onGestureStart(e) {
+  if (morphState !== 'open') return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (isInteractiveTarget(e.target)) return;
+
+  gestureState = {
+    pointerId: e.pointerId,
+    active: false,
+    startX: e.clientX,
+    startY: e.clientY,
+    lastX: e.clientX,
+    lastY: e.clientY,
+    samples: [{ x: e.clientX, y: e.clientY, t: performance.now() }],
+  };
+}
+
+function onGestureMove(e) {
+  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
+
+  const dx = e.clientX - gestureState.startX;
+  const dy = e.clientY - gestureState.startY;
+
+  if (!gestureState.active) {
+    const dist = Math.hypot(dx, dy);
+    if (dist < GESTURE_THRESHOLD) return;
+    gestureState.active = true;
+    overlay.style.transition = 'none';
+    overlay.style.willChange = 'transform, opacity';
+    overlay.classList.add('gesturing');
+    try { overlay.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+
+  e.preventDefault();
+
+  const now = performance.now();
+  gestureState.samples.push({ x: e.clientX, y: e.clientY, t: now });
+  while (gestureState.samples.length > 1 && now - gestureState.samples[0].t > 100) {
+    gestureState.samples.shift();
+  }
+  gestureState.lastX = e.clientX;
+  gestureState.lastY = e.clientY;
+
+  const dist = Math.hypot(dx, dy);
+  const scale = 1 - Math.min(dist / GESTURE_SCALE_DISTANCE, 1) * (1 - GESTURE_MAX_SCALE_DOWN);
+  const maxDim = Math.max(window.innerWidth, window.innerHeight);
+  const opacity = 1 - Math.min(dist / (maxDim * 0.6), 1) * 0.5;
+  const radius = Math.min(dist / 10, 24);
+
+  overlay.style.transformOrigin = 'center center';
+  overlay.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+  overlay.style.opacity = String(opacity);
+  overlay.style.borderRadius = radius + 'px';
+}
+
+function onGestureEnd(e) {
+  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
+
+  const wasActive = gestureState.active;
+  if (!wasActive) { gestureState = null; return; }
+
+  const dx = gestureState.lastX - gestureState.startX;
+  const dy = gestureState.lastY - gestureState.startY;
+  const dist = Math.hypot(dx, dy);
+  const samples = gestureState.samples;
+  gestureState = null;
+
+  let vx = 0, vy = 0;
+  if (samples.length >= 2) {
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const dt = last.t - first.t;
+    if (dt > 0) { vx = (last.x - first.x) / dt; vy = (last.y - first.y) / dt; }
+  }
+  const speed = Math.hypot(vx, vy);
+  const minDim = Math.min(window.innerWidth, window.innerHeight);
+
+  const shouldComplete =
+    dist > minDim * GESTURE_COMPLETE_RATIO ||
+    speed > GESTURE_VELOCITY_THRESHOLD;
+
+  if (shouldComplete) completeGestureClose();
+  else rebounceGesture();
+}
+
+function rebounceGesture() {
+  overlay.style.transition =
+    'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 320ms cubic-bezier(0.22, 1, 0.36, 1)';
+  overlay.style.transform = 'translate(0, 0) scale(1)';
+  overlay.style.opacity = '1';
+  overlay.style.borderRadius = '0px';
+
+  setTimeout(() => {
+    clearGestureStyles();
+  }, 340);
+}
+
+/* 从松手位置变成按钮形状归位 */
+function completeGestureClose() {
+  const token = ++animToken;
+  morphState = 'closing';
+  clearRadiusTimer();
+  document.body.classList.remove('font-page-open');
+  unlockBodyScroll();
+
+  const pageRect = overlay.getBoundingClientRect();
+  const pageStyle = getComputedStyle(overlay);
+  const currentOpacity = parseFloat(pageStyle.opacity) || 1;
+  const currentRadius = parseFloat(pageStyle.borderRadius) || 0;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const startLeft = Math.max(-vw * 0.5, Math.min(vw, pageRect.left));
+  const startTop  = Math.max(-vh * 0.5, Math.min(vh, pageRect.top));
+  const startWidth  = Math.max(1, Math.min(vw * 2, pageRect.width));
+  const startHeight = Math.max(1, Math.min(vh * 2, pageRect.height));
+
+  overlay.classList.remove('content-in');
+  overlay.classList.remove('active');
+  overlay.classList.remove('gesturing');
+  overlay.setAttribute('aria-hidden', 'true');
+
+  const el = morphLayer;
+  const surface = getSurfaceColor();
+  const rect = openBtn.getBoundingClientRect();
+  const bg = getButtonColor();
+  const btnRadius = getButtonRadius(rect);
+
+  el.style.transition = 'none';
+  el.style.display = 'block';
+  el.style.background = surface;
+  el.style.opacity = String(currentOpacity);
+  el.style.left = startLeft + 'px';
+  el.style.top = startTop + 'px';
+  el.style.width = startWidth + 'px';
+  el.style.height = startHeight + 'px';
+  el.style.borderRadius = currentRadius + 'px';
+  void el.offsetWidth;
+
+  el.classList.add('visible');
+  el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
+    + `, background-color ${DURATION * 2}ms ${EASING}`;
+  requestAnimationFrame(() => {
+    if (token !== animToken) return;
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    el.style.width = rect.width + 'px';
+    el.style.height = rect.height + 'px';
+    el.style.borderRadius = btnRadius;
+    el.style.background = bg;
+    el.style.opacity = '1';
+  });
+
+  waitSize(el).then(() => {
+    if (token !== animToken) return;
+    return new Promise((r) => setTimeout(r, DURATION));
+  }).then(() => {
+    if (token !== animToken) return;
+    el.style.transition = 'opacity 150ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      if (token !== animToken) return;
+      el.style.display = 'none';
+      el.style.transition = '';
+      el.classList.remove('visible');
+      morphState = 'idle';
+      clearGestureStyles();
+    }, 160);
+  });
+}
+
+  overlay.addEventListener('pointerdown', onGestureStart);
+  overlay.addEventListener('pointermove', onGestureMove, { passive: false });
+  overlay.addEventListener('pointerup', onGestureEnd);
+  overlay.addEventListener('pointercancel', onGestureEnd);
 })();
 
 /* =========================================================
@@ -1603,23 +1605,43 @@ document.getElementById('cdRow').addEventListener('click', () => enterFocus('cou
 
 focusPip.addEventListener('click', () => {
   if (!focusMode.active) return;
-  focusMode.main = focusMode.main === 'clock' ? 'countdown' : 'clock';
-  updateFocusLayout();
-  renderFocus(Date.now());
+  switchFocusMain(focusMode.main === 'clock' ? 'countdown' : 'clock');
 });
 
 focusClockView.addEventListener('click', () => {
   if (!focusMode.active) return;
-  focusMode.main = 'countdown';
-  updateFocusLayout();
-  renderFocus(Date.now());
+  switchFocusMain('countdown');
 });
 focusCdView.addEventListener('click', () => {
   if (!focusMode.active) return;
-  focusMode.main = 'clock';
-  updateFocusLayout();
-  renderFocus(Date.now());
+  switchFocusMain('clock');
 });
+
+/* 大部件切换：短暂缩放 + 淡入淡出（不改变排版，仅过渡动效） */
+const focusMainEl = document.getElementById('focusMain');
+let focusSwitchTimer = null;
+function switchFocusMain(next) {
+  if (!focusMode.active || next === focusMode.main) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  focusMode.main = next;
+  if (reduced) {
+    updateFocusLayout();
+    renderFocus(Date.now());
+    return;
+  }
+  clearTimeout(focusSwitchTimer);
+  focusMainEl.classList.remove('switching-in');
+  focusMainEl.classList.add('switching-out');
+  focusSwitchTimer = setTimeout(() => {
+    updateFocusLayout();
+    renderFocus(Date.now());
+    focusMainEl.classList.remove('switching-out');
+    focusMainEl.classList.add('switching-in');
+    focusSwitchTimer = setTimeout(() => {
+      focusMainEl.classList.remove('switching-in');
+    }, 280);
+  }, 200);
+}
 
 focusCloseBtn.addEventListener('click', exitFocus);
 
