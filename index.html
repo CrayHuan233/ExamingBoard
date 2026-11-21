@@ -19,80 +19,41 @@
   font-display: swap;
 }
 
-:root {
-  --exam-background: #D2EFEE;
-  --exam-card: #F7FDFC;
-  --exam-accent: #036C6D;
-  --exam-urgent: #C0282E;
-  --exam-ended: #916B3D;
-}
-html.mdui-theme-dark {
-  --exam-background: #163D3E;
-  --exam-card: #214849;
-  --exam-accent: #D2EFEE;
-  --exam-urgent: #FF9A9F;
-  --exam-ended: #C9A26B;
-}
-@media (prefers-color-scheme: dark) {
-  html.mdui-theme-auto {
-    --exam-background: #163D3E;
-    --exam-card: #214849;
-    --exam-accent: #D2EFEE;
-    --exam-urgent: #FF9A9F;
-    --exam-ended: #C9A26B;
-  }
-}
-
 /* ========== 基础重置 ========== */
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0; min-height: 100%;
-  overflow-x: hidden;
+  /* 用 clip 而非 hidden：hidden 会把另一轴计算成 auto，使 html/body
+     变成滚动容器，滚动发生在 body 内部 → mdui 顶栏/底栏监听的 window
+     scroll 事件收不到，shrink/elevate/hide 全部失效。clip 不创建滚动容器。 */
+  overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
 }
 body {
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--exam-background);
+  background: rgb(var(--mdui-color-surface));   /* 与设置页背景统一 */
   color: rgb(var(--mdui-color-on-surface));
   display: flex;
   justify-content: center;
-  align-items: safe center;
+  align-items: flex-start;
+  position: relative;          /* 供非活动页 absolute 定位参照 */
   min-height: 100vh;
-  padding: 80px 16px 0;
-  overflow-y: auto;
+  padding: 124px 16px 80px;   /* 为 medium 变体顶栏(112px)预留空间 */
+  /* 不设 overflow-y：让内容自然撑开 document，由 window 统一滚动 */
 }
 body.font-page-open { overflow: hidden; }
 body.focus-mode { overflow: hidden; }
+
+/* ========== 主题配色 ==========
+   配色由 mdui.setColorScheme(种子色) 动态生成，会写入 <html> 的
+   mdui-custom-color-scheme-* 类，自动产出浅色/深色两套变量。
+   这里不再硬编码任何 -light/-dark 颜色，避免覆盖动态生成的配色。 */
 
 /* ========== 顶栏 ========== */
 .app-top-bar {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 900;
-  height: 64px;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  color: #036C6D;
-}
-.app-top-bar mdui-top-app-bar-title {
-  color: #036C6D;
-  height: 29px;
-  font-size: 19px;
-  line-height: 29px;
-  align-self: center;
-}
-.app-top-bar .brand {
-  height: 29px;
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-.app-top-bar .brand-logo,
-.app-top-bar mdui-top-app-bar-title {
-  position: relative;
-  top: 0;
 }
 .top-bar-actions {
   display: flex;
@@ -100,35 +61,41 @@ body.focus-mode { overflow: hidden; }
   gap: 2px;
   margin-right: 6px;
 }
-.brand-logo {
-  width: auto;
-  height: 29px;
+/* 顶栏左上角 logo：1:1 自适应 */
+.top-bar-logo {
+  width: 30px;
+  height: 30px;
+  aspect-ratio: 1 / 1;
   object-fit: contain;
-  margin-left: 12px;
-  margin-right: 8px;
-  border-radius: 6px;
-  align-self: center;
+  margin-left: 2px;
+  flex: 0 0 auto;
 }
 
 /* ========== 主页面布局 ========== */
 .app {
   width: 100%;
-  max-width: 1120px;
+  max-width: 520px;
   margin: 0 auto;
+  /* 首页参与文档流，使用 window 滚动条 */
+}
+body.view-settings .app {
+  /* 设置态：首页脱离文档流（不撑高度），淡出 */
+  position: absolute;
+  top: 124px; left: 0; right: 0;
+  pointer-events: none;
 }
 .page { display: none; }
 .page.active { display: block; }
 
 /* ========== 卡片 ========== */
 .card {
-  background: var(--exam-card);
+  background: rgb(var(--mdui-color-surface-container));
   border-radius: 24px;
-  padding: 18px 24px 16px;
+  padding: 26px 24px 22px;
   box-shadow: 0 4px 20px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.04);
   margin-bottom: 18px;
   position: relative;
 }
-#dashboardPage .card { margin-bottom: 0; }
 .title {
   font-size: 14px;
   letter-spacing: 3px;
@@ -164,46 +131,6 @@ body.focus-mode { overflow: hidden; }
   margin-top: 2px;
   margin-bottom: 22px;
 }
-.round-clock-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 10px 0 16px;
-  cursor: pointer;
-}
-.round-clock {
-  width: min(330px, 78vw);
-  aspect-ratio: 1;
-  display: block;
-  border-radius: 50%;
-  background: var(--exam-card);
-  filter: drop-shadow(0 8px 14px rgba(15, 23, 42, .10));
-}
-.clock-face-border { fill: var(--exam-card); stroke: #333333; stroke-width: 5; }
-html.mdui-theme-dark .clock-face-border { stroke: #d6d8dc; }
-.clock-tick { stroke: #555555; stroke-width: 1.2; stroke-linecap: round; }
-.clock-tick.major { stroke: #333333; stroke-width: 1.8; }
-html.mdui-theme-dark .clock-tick { stroke: #aab1bb; }
-html.mdui-theme-dark .clock-tick.major { stroke: #d6d8dc; }
-.clock-number {
-  fill: #333333;
-  font-size: 31px;
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-html.mdui-theme-dark .clock-number { fill: #dfe3e8; }
-.clock-date {
-  fill: rgb(var(--mdui-color-on-surface-variant));
-  font-size: 16px;
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-.clock-hour { stroke: #000000; stroke-width: 7; stroke-linecap: round; }
-.clock-minute { stroke: #000000; stroke-width: 5; stroke-linecap: round; }
-.clock-second { stroke: #C0282E; stroke-width: 2; stroke-linecap: round; }
-html.mdui-theme-dark .clock-hour { stroke: #edf0f3; }
-html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
-.clock-pin-outer { fill: var(--exam-card); stroke: #C0282E; stroke-width: 2; }
 .divider {
   height: 1px;
   background: rgb(var(--mdui-color-outline-variant));
@@ -227,8 +154,8 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   transition: color .2s;
 }
 .main-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.main-name.running { color: rgb(var(--mdui-color-primary)); }
-.main-name.ended   { color: var(--exam-ended); }
+.main-name.running { color: #059669; }
+.main-name.ended   { color: #b45309; }
 
 .cd-row {
   display: flex;
@@ -256,9 +183,9 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   line-height: 1.1;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.cd-num.urgent  { color: var(--exam-urgent); }
-.cd-num.running { color: rgb(var(--mdui-color-primary)); }
-.cd-num.ended   { color: var(--exam-ended); }
+.cd-num.urgent  { color: #dc2626; }
+.cd-num.running { color: #059669; }
+.cd-num.ended   { color: #b45309; }
 .cd-text {
   font-size: 12px;
   color: rgb(var(--mdui-color-on-surface-variant));
@@ -271,8 +198,33 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   margin-top: 6px;
 }
 .status.waiting { color: rgb(var(--mdui-color-primary)); }
-.status.running { color: rgb(var(--mdui-color-primary)); }
-.status.ended   { color: var(--exam-ended); }
+.status.running { color: #059669; }
+.status.ended   { color: #b45309; }
+
+/* ========== 考试时间进度条 ========== */
+.exam-progress-wrap {
+  margin-top: 16px;
+}
+.progress-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-bottom: 6px;
+}
+.progress-caption b {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.exam-progress-wrap mdui-linear-progress {
+  display: block;
+  width: 100%;
+}
+/* 焦点大界面里的进度条字号放大以匹配大屏 */
+.focus-main .progress-caption {
+  font-size: clamp(11px, 1.6vw, 15px);
+}
 
 /* ========== 按钮（使用 MDUI 默认圆角与高度） ========== */
 .btn-primary {
@@ -302,90 +254,40 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 }
 .form-row mdui-select { flex: 1; width: 100%; }
 .form-row mdui-text-field { flex: 1; }
-.datetime-field-wrap {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
-}
-.datetime-field-wrap mdui-text-field { width: 100%; }
-.datetime-field-wrap:not(.has-value) mdui-text-field::part(input) {
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-.datetime-placeholder {
-  position: absolute;
-  top: 50%;
-  left: 16px;
-  z-index: 1;
-  transform: translateY(-50%);
-  color: rgb(var(--mdui-color-on-surface-variant));
-  opacity: .62;
-  font-size: 16px;
-  line-height: 1;
-  width: calc(100% - 48px);
-  padding-right: 8px;
-  pointer-events: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.datetime-field-wrap.has-value .datetime-placeholder { display: none; }
-.subject-form-row {
-  position: relative;
-  z-index: 10;
-}
-.subject-picker {
-  width: 100%;
-  justify-content: flex-start;
-  text-align: left;
-}
-.subject-picker::part(label) { color: rgb(var(--mdui-color-on-surface)); }
-.subject-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  width: 100%;
-  z-index: 10000;
-  display: none;
-  padding: 8px;
-  border: 1px solid rgb(var(--mdui-color-outline-variant));
-  border-radius: 16px;
-  background: rgb(var(--mdui-color-surface-container-high));
-  box-shadow: 0 8px 24px rgba(0,0,0,.16);
-}
-.subject-dropdown.open { display: block; }
-.subject-grid {
+
+/* ========== 快捷结束时间 chips 行（选择开始时间后自动展开） ========== */
+.quick-end-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  width: 100%;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-bottom: 0;
+  transition: grid-template-rows .28s ease, opacity .25s ease, margin-bottom .28s ease;
 }
-.subject-grid-button {
-  min-height: 44px;
-  border: 1px solid rgb(var(--mdui-color-outline-variant));
-  border-radius: 12px;
-  background: rgb(var(--mdui-color-surface-container));
-  color: rgb(var(--mdui-color-on-surface));
-  font-size: 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform .12s, background .12s, border-color .12s;
+.quick-end-row.show {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 12px;
 }
-.subject-grid-button:hover {
-  background: rgb(var(--mdui-color-surface-container-high));
-  border-color: rgb(var(--mdui-color-primary));
-}
-.subject-grid-button:active { transform: scale(.96); }
-.subject-grid-button.selected {
-  color: rgb(var(--mdui-color-on-primary));
-  background: rgb(var(--mdui-color-primary));
-  border-color: rgb(var(--mdui-color-primary));
-}
-.subject-grid-actions {
+.quick-end-clip { overflow: hidden; min-height: 0; }
+.quick-end-hint {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin: 0 0 9px;
+}
+.quick-end-hint::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgb(var(--mdui-color-primary));
+}
+.quick-end-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .list-title {
@@ -393,6 +295,17 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   font-weight: 600;
   color: rgb(var(--mdui-color-on-surface));
   margin-bottom: 14px;
+}
+/* 设置项标题：左侧带图标 */
+.setting-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.setting-title mdui-icon {
+  color: rgb(var(--mdui-color-primary));
+  font-size: 21px;
+  flex: 0 0 auto;
 }
 .empty {
   font-size: 13px;
@@ -440,9 +353,9 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   min-width: 110px;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.exam-cd.urgent  { color: var(--exam-urgent); }
-.exam-cd.running { color: rgb(var(--mdui-color-primary)); }
-.exam-cd.ended   { color: var(--exam-ended); }
+.exam-cd.urgent  { color: #dc2626; }
+.exam-cd.running { color: #059669; }
+.exam-cd.ended   { color: #b45309; }
 .del-btn {
   flex: 0 0 auto;
 }
@@ -476,13 +389,12 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 .plan-page-content {
   position: absolute;
   inset: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;               /* 锁定内部滚动：内容不允许滚动，不超出界面 */
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   opacity: 0;
-  transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1);
   padding: 20px 16px 80px;
 }
 .plan-page-overlay.content-in .plan-page-content { opacity: 1; }
@@ -494,6 +406,8 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* ========== 焦点模式（点击放大） ========== */
@@ -501,18 +415,18 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   position: fixed;
   inset: 0;
   z-index: 999989;
-  background: var(--exam-background);
+  background: rgb(var(--mdui-color-surface-container-low));
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
-              visibility 0s linear 220ms;
+  transition: opacity 360ms cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0s linear 360ms;
 }
 .focus-overlay.active {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1),
               visibility 0s linear 0s;
 }
 
@@ -560,8 +474,8 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   color: rgb(var(--mdui-color-primary));
 }
 .focus-cd-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.focus-cd-name.running { color: rgb(var(--mdui-color-primary)); }
-.focus-cd-name.ended   { color: var(--exam-ended); }
+.focus-cd-name.running { color: #059669; }
+.focus-cd-name.ended   { color: #b45309; }
 .focus-cd-row {
   display: flex;
   justify-content: center;
@@ -583,9 +497,9 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   line-height: 1.1;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.focus-cd-num.urgent  { color: var(--exam-urgent); }
-.focus-cd-num.running { color: rgb(var(--mdui-color-primary)); }
-.focus-cd-num.ended   { color: var(--exam-ended); }
+.focus-cd-num.urgent  { color: #dc2626; }
+.focus-cd-num.running { color: #059669; }
+.focus-cd-num.ended   { color: #b45309; }
 .focus-cd-text {
   font-size: clamp(11px, 1.6vw, 15px);
   color: rgb(var(--mdui-color-on-surface-variant));
@@ -597,8 +511,8 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   color: rgb(var(--mdui-color-on-surface-variant));
 }
 .focus-status.waiting { color: rgb(var(--mdui-color-primary)); }
-.focus-status.running { color: rgb(var(--mdui-color-primary)); }
-.focus-status.ended   { color: var(--exam-ended); }
+.focus-status.running { color: #059669; }
+.focus-status.ended   { color: #b45309; }
 
 /* 右上角小挂件 */
 .focus-pip {
@@ -606,13 +520,13 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   top: 20px;
   right: 20px;
   z-index: 999994;
-  background: var(--exam-card);
+  background: rgb(var(--mdui-color-surface-container));
   border-radius: 16px;
   padding: 12px 16px;
   box-shadow: 0 6px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
   cursor: pointer;
-  transition: transform .12s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow .12s;
+  transition: transform .2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow .2s;
   user-select: none;
   max-width: 220px;
   opacity: 0;
@@ -660,8 +574,8 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   margin-bottom: 2px;
 }
 .focus-pip-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.focus-pip-name.running { color: rgb(var(--mdui-color-primary)); }
-.focus-pip-name.ended   { color: var(--exam-ended); }
+.focus-pip-name.running { color: #059669; }
+.focus-pip-name.ended   { color: #b45309; }
 .focus-pip-cd {
   font-size: 15px;
   font-weight: 400;
@@ -670,9 +584,9 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   white-space: nowrap;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.focus-pip-cd.urgent  { color: var(--exam-urgent); }
-.focus-pip-cd.running { color: rgb(var(--mdui-color-primary)); }
-.focus-pip-cd.ended   { color: var(--exam-ended); }
+.focus-pip-cd.urgent  { color: #dc2626; }
+.focus-pip-cd.running { color: #059669; }
+.focus-pip-cd.ended   { color: #b45309; }
 .focus-pip-status {
   font-size: 11px;
   color: rgb(var(--mdui-color-on-surface-variant));
@@ -689,14 +603,14 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   transform: scale(.85);
   visibility: hidden;
   pointer-events: none;
-  transition: opacity .12s, transform .12s, visibility 0s linear .12s;
+  transition: opacity .25s, transform .25s, visibility 0s linear .25s;
 }
 .focus-overlay.active ~ .focus-close.active {
   opacity: 1;
   transform: scale(1);
   visibility: visible;
   pointer-events: auto;
-  transition: opacity .12s .06s, transform .12s .06s, visibility 0s linear 0s;
+  transition: opacity .25s .15s, transform .25s .15s, visibility 0s linear 0s;
 }
 
 /* 提示文字 */
@@ -715,92 +629,18 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity .12s, visibility 0s linear .12s;
+  transition: opacity .25s, visibility 0s linear .25s;
   white-space: nowrap;
 }
 .focus-overlay.active ~ .focus-hint.active {
   opacity: .85;
   visibility: visible;
-  transition: opacity .12s .08s, visibility 0s linear 0s;
-}
-
-@media (min-width: 700px) {
-  .app {
-    max-width: 1120px;
-  }
-  #dashboardPage .card {
-    width: 100%;
-    min-height: 520px;
-    margin-bottom: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto;
-    column-gap: 24px;
-    align-content: center;
-    padding: 28px 36px;
-  }
-  #dashboardPage .round-clock-wrap {
-    grid-column: 1;
-    grid-row: 1 / 5;
-    align-self: center;
-    margin: 0;
-  }
-  #dashboardPage .round-clock {
-    width: min(100%, 460px);
-  }
-  #dashboardPage .divider {
-    display: none;
-  }
-  #dashboardPage .main-label {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: end;
-    font-size: 16px;
-  }
-  #dashboardPage .main-name {
-    grid-column: 2;
-    grid-row: 2;
-    margin: 8px 0 18px;
-    font-size: 28px;
-    min-height: 38px;
-  }
-  #dashboardPage .cd-row {
-    grid-column: 2;
-    grid-row: 3;
-    margin: 0;
-  }
-  #dashboardPage .cd-unit {
-    max-width: 150px;
-    min-width: 0;
-    padding: 16px 8px 12px;
-  }
-  #dashboardPage .cd-num {
-    font-size: clamp(26px, 4vw, 44px);
-  }
-  #dashboardPage .status {
-    grid-column: 2;
-    grid-row: 4;
-    display: block;
-    min-height: 18px;
-    margin-top: 14px;
-    font-size: 15px;
-  }
+  transition: opacity .25s .3s, visibility 0s linear 0s;
 }
 
 @media (max-width: 480px) {
-  body { padding: 76px 12px 0; }
+  body { padding: 116px 12px 80px; }
   .card { padding: 22px 18px 18px; }
-  .app-top-bar .brand { height: 17px; }
-  .app-top-bar .brand-logo {
-    height: 12px;
-    margin-left: 4px;
-    margin-right: 2px;
-  }
-  .app-top-bar mdui-top-app-bar-title {
-    height: 17px;
-    font-size: 11px;
-    line-height: 17px;
-  }
   .cd-row { gap: 6px; }
   .cd-unit { min-width: 0; padding: 10px 4px 8px; }
   .cd-num { font-size: 26px; }
@@ -822,6 +662,23 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   }
 }
 
+
+/* ========== 焦点大部件切换动效（不改变排版，仅过渡） ========== */
+.focus-main { transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1), transform 220ms cubic-bezier(0.22, 1, 0.36, 1); }
+.focus-main.switching-out { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
+.focus-main.switching-in { animation: focusMainPop 260ms cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes focusMainPop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-main { transition-duration: .01ms !important; }
+  .focus-main.switching-in { animation: none !important; }
+}
+
+/* 手势拖动期间隐藏 plan-page 滚动条视觉反馈 */
+.plan-page-overlay.gesturing .plan-page-content { overflow: hidden; }
+
 /* ========== 修复：自定义科目Dialog浮在plan-page-overlay上层 ========== */
 #customSubjectDialog {
   --mdui-dialog-z-index: 999998 !important;
@@ -841,53 +698,397 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 }
 
 
+/* =========================================================
+   底部应用栏：mdui-bottom-app-bar + 右下角悬浮 FAB
+   参考 mdui 官方"固定浮动操作按钮"示例（fab-detach）
+   ========================================================= */
+mdui-bottom-app-bar.quick-bar {
+  --z-index: 999993;
+}
+/* 焦点模式隐藏底部应用栏；detach 的 FAB 脱离在 body 上，需单独隐藏 */
+body.quick-nav-hidden mdui-bottom-app-bar.quick-bar { display: none !important; }
+body.quick-nav-hidden #playFab { display: none !important; }
+/* 悬浮 FAB 略微离开边角，避免贴边 */
+mdui-fab#playFab { margin: 0 4px 4px 0; }
+/* 播放按钮使用 mdui 默认主题色（filled FAB = primary 填充 / on-primary 图标），
+   不再覆盖 ::part(button)/::part(icon)，跟随主题自动切换。 */
+
+/* =========================================================
+   设置页面
+   ========================================================= */
+/* =========================================================
+   选项卡切换动画：淡入淡出（复刻 prompt.html）
+   - 页面切换用 opacity 淡入淡出，缓动 cubic-bezier(0.4,0,0.6,1)
+   关键：由 body.view-settings 单一状态驱动两个页面，动画全部交给
+   CSS transition，JS 不再用 setTimeout 改 class —— 快速连点时
+   CSS 会自动从当前插值平滑过渡，绝不会两个页面同时全透明。
+   ========================================================= */
+
+.settings-page-overlay {
+  /* 非设置态：脱离文档流、隐藏、淡出（visibility 延迟到淡出结束） */
+  position: absolute;
+  top: 124px; left: 0; right: 0;
+  z-index: 800;                /* 低于顶栏(900)，让顶栏覆盖在本页之上 */
+  visibility: hidden;
+  pointer-events: none;
+  background: rgb(var(--mdui-color-surface));
+  opacity: 0;
+  transition: opacity 340ms cubic-bezier(0.4, 0, 0.6, 1), visibility 0s linear 340ms;
+}
+body.view-settings .settings-page-overlay {
+  /* 设置态：参与文档流，内容撑开 body → window 滚动条生效 → 顶栏 shrink 生效 */
+  position: static;
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  transition: opacity 340ms cubic-bezier(0.4, 0, 0.6, 1), visibility 0s;
+}
+.settings-page-content {
+  /* 不再用内部独立滚动条；随 body/window 整体滚动 */
+  box-sizing: border-box;
+  padding: 0 0 20px;
+}
+.settings-inner {
+  max-width: 520px;
+  margin: 0 auto;
+  /* 自然流式布局：元素从首行开始，依次排列并自然换行 */
+}
+/* 首页：切到设置时淡出；切回时淡入（prompt.html 式淡入淡出） */
+#dashboardPage {
+  transition: opacity 340ms cubic-bezier(0.4, 0, 0.6, 1);
+}
+body.view-settings #dashboardPage {
+  opacity: 0;
+  pointer-events: none;
+}
+.settings-desc {
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin: -4px 0 14px;
+  line-height: 1.5;
+}
+/* 深浅色分段按钮：每个按钮带 icon，文字自适应换行 */
+.theme-segmented { width: 100%; }
+.theme-segmented mdui-segmented-button {
+  --mdui-comp-segmented-button-label-font-size: 13px;
+  white-space: nowrap;
+}
+/* 主题配色选择：预设色圆点 + 自定义取色器 */
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+.color-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgb(var(--mdui-color-outline));
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: transform .15s, box-shadow .15s;
+  flex: 0 0 auto;
+}
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.selected {
+  box-shadow: 0 0 0 2px rgb(var(--mdui-color-surface)), 0 0 0 4px rgb(var(--mdui-color-primary));
+}
+.custom-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+.custom-color-row input[type="color"] {
+  width: 44px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.custom-color-value {
+  font-variant-numeric: tabular-nums;
+  font-family: 'XiaolaiMono', 'Consolas', monospace;
+  color: rgb(var(--mdui-color-on-surface));
+}
+.widget-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.preview-caption {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin: 18px 0 9px;
+}
+.preview-caption::before {
+  content: '';
+  width: 3px; height: 12px; border-radius: 2px;
+  background: rgb(var(--mdui-color-primary));
+}
+.widget-preview {
+  border-radius: 18px;
+  padding: 18px 16px;
+  background: rgb(var(--mdui-color-surface-container-highest));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 130px;
+  justify-content: center;
+  overflow: hidden;
+}
+.widget-preview .wp-item { text-align: center; max-width: 100%; }
+.wp-clock {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'XiaolaiMono', 'Consolas', monospace;
+  color: rgb(var(--mdui-color-on-surface));
+  line-height: 1.1;
+}
+.wp-subject {
+  font-size: 22px; font-weight: 700;
+  color: rgb(var(--mdui-color-primary));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wp-range, .wp-next {
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  font-variant-numeric: tabular-nums;
+}
+.wp-next b { color: rgb(var(--mdui-color-on-surface)); font-weight: 600; }
+.wp-empty { font-size: 13px; color: rgb(var(--mdui-color-on-surface-variant)); }
+
+/* 焦点大界面里由 chips 控制的部件区 */
+.focus-widgets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  max-width: 100%;
+}
+.focus-widgets .fw-item {
+  font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  text-align: center;
+}
+.focus-widgets .fw-subject {
+  font-size: clamp(16px, 2.6vw, 24px);
+  font-weight: 700;
+  color: rgb(var(--mdui-color-primary));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.focus-widgets .fw-range, .focus-widgets .fw-next, .focus-widgets .fw-clock {
+  font-size: clamp(12px, 1.8vw, 16px);
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+.focus-widgets .fw-next b { color: rgb(var(--mdui-color-on-surface)); }
+.focus-widgets .fw-clock {
+  font-family: 'XiaolaiMono', 'Consolas', monospace;
+}
+[hidden] { display: none !important; }
+
+/* =========================================================
+   骨架块风格（静态，无动画、无条纹）
+   - 占位块统一用 mdui 默认颜色令牌，与设置页保持一致
+   - 保留圆角与底色质感，数字/文字仍保留显示
+   - 已移除脉冲跳动与渐变条纹滚动效果
+   ========================================================= */
+:root { --skel-radius: 8px; }
+
+/* 基础骨架块：纯色 + 圆角（静态） */
+.skel, .skel-grad {
+  background: rgb(var(--mdui-color-surface-container-highest));
+  border-radius: var(--skel-radius);
+}
+
+/* ---- 应用到首页卡片内的各类块：保留文字，外层套骨架底色 ---- */
+.card { background: rgb(var(--mdui-color-surface-container)); }
+.title {
+  display: inline-block; padding: 4px 18px; margin-left: 50%; transform: translateX(-50%);
+  background: rgb(var(--mdui-color-surface-container-highest)); border-radius: var(--skel-radius);
+}
+.now-time {
+  border-radius: 12px;
+  background: rgb(var(--mdui-color-surface-container-highest));
+  padding: 6px 0;
+}
+.main-label, .status {
+  display: inline-block; padding: 3px 14px; border-radius: var(--skel-radius);
+  background: rgb(var(--mdui-color-surface-container-highest));
+}
+.main-name {
+  display: inline-block; padding: 5px 22px; border-radius: 10px;
+  background: rgb(var(--mdui-color-surface-container-highest));
+  margin-left: 50%; transform: translateX(-50%);
+  min-width: 240px;              /* 避免"暂无考试安排"等文本换行 */
+  max-width: calc(100% - 8px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cd-unit { background: rgb(var(--mdui-color-surface-container-highest)); }
+.cd-text {
+  display: inline-block; padding: 1px 10px; border-radius: 6px;
+  background: rgb(var(--mdui-color-surface-container-highest));
+}
+
+/* ---- 焦点大界面骨架化 ---- */
+.focus-cd-unit { background: rgb(var(--mdui-color-surface-container-highest)); }
+.focus-cd-num, .focus-clock { text-shadow: none; }
+
+/* ---- 预览块骨架化 ---- */
+.widget-preview { background: rgb(var(--mdui-color-surface-container-highest)); }
+.wp-item { padding: 3px 12px; border-radius: var(--skel-radius); }
+
+/* =========================================================
+   指针式时钟（取自 Material You NewTab，颜色改用 mdui 令牌）
+   ========================================================= */
+.analog-clock {
+  width: min(240px, 54vw);
+  aspect-ratio: 1 / 1;
+  position: relative;
+  margin: 0 auto 6px;
+  display: none;                 /* 默认关闭，由开关启用 */
+}
+.analog-clock.enabled { display: block; }
+.analog-clock svg.ac-bg {
+  width: 100%; height: 100%;
+  display: block;
+  position: absolute; inset: 0;
+}
+/* 花瓣背景：浅色用主色浅色调，深色用深色调，随主题自适应 */
+.ac-petal {
+  fill: rgb(var(--mdui-color-primary-container));
+}
+:root:not(.mdui-theme-light):not(.mdui-theme-dark) .ac-petal { fill: rgb(var(--mdui-color-primary-container)); }
+html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container)); }
+
+.analog-clock .ac-center {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px; height: 20px;
+}
+.analog-clock .ac-hand {
+  position: absolute;
+  left: 0;
+  width: 20px;
+  height: 100px;
+  background-color: rgb(var(--mdui-color-on-primary-container));
+  top: -90px;
+  transform-origin: bottom center;
+  border-radius: 10px;
+}
+.ac-hour {
+  height: 80px !important;
+  top: -70px !important;
+  background-color: rgb(var(--mdui-color-primary)) !important;
+}
+.ac-hour::after {
+  content: ""; position: absolute;
+  width: 20px; height: 30px;
+  background-color: rgb(var(--mdui-color-primary));
+  bottom: -10px; border-radius: 100px;
+}
+.ac-minute { z-index: 3; }
+.ac-minute::after {
+  content: ""; position: absolute;
+  width: 20px; height: 30px;
+  background-color: rgb(var(--mdui-color-on-primary-container));
+  bottom: -10px; border-radius: 100px;
+}
+.ac-second { background-color: transparent !important; z-index: 4; }
+.ac-second::after {
+  content: ""; position: absolute;
+  left: 0;
+  width: 20px; height: 20px;
+  background-color: rgb(var(--mdui-color-primary));
+  top: 2px; border-radius: 100%;   /* 向轴心内移约1.5个点长(30px)，避免溢出花瓣 */
+}
+/* 中心轴点 */
+.ac-pin {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgb(var(--mdui-color-on-primary-container));
+  z-index: 5;
+}
+/* 焦点大时间界面里的指针时钟：按视口缩放，放在数字时钟上方 */
+#focusClockView .analog-clock {
+  width: min(300px, 42vh);
+  margin: 0 auto clamp(12px, 2.5vh, 24px);
+}
+
 </style>
 </head>
 <body>
 
-<!-- ==================== 顶栏 ==================== -->
-<mdui-top-app-bar class="app-top-bar" variant="small" scroll-behavior="shrink elevate">
-  <div class="brand">
-    <img class="brand-logo" src="https://chn.picui.cn/8997/2026/11/21/6b01561562035.png" alt="考试看板标识">
-    <mdui-top-app-bar-title>| 考试看板</mdui-top-app-bar-title>
-  </div>
+<!-- ==================== 顶栏（variant=medium，参考 mdui 示例） ==================== -->
+<mdui-top-app-bar class="app-top-bar" variant="medium" scroll-behavior="shrink elevate">
+  <img class="top-bar-logo" src="./src/favicon.png" alt="合肥六中Logo">
+  <mdui-top-app-bar-title>考试看板</mdui-top-app-bar-title>
   <div style="flex-grow: 1"></div>
   <div class="top-bar-actions">
-    <mdui-button-icon id="openPlanBtn" icon="settings" title="编辑考试计划"></mdui-button-icon>
     <mdui-button-icon id="themeToggleBtn" icon="dark_mode" title="切换深浅色"></mdui-button-icon>
   </div>
 </mdui-top-app-bar>
 
 <div class="app">
+  <br><br>
   <!-- ==================== 主页（倒计时） ==================== -->
   <main id="dashboardPage" class="page active">
     <div class="card">
-      <div class="round-clock-wrap" id="cdClock" title="点击放大">
-        <svg class="round-clock" id="roundClock" viewBox="0 0 400 400" role="img" aria-label="圆形实时时钟">
-          <circle class="clock-face-border" cx="200" cy="200" r="186"></circle>
-          <g id="clockTicks"></g>
-          <g id="clockNumbers"></g>
-          <text class="clock-date" id="clockDate" x="200" y="256">2026.11.21 六</text>
-          <g id="clockHands">
-            <line class="clock-hour" id="hourHand" x1="200" y1="200" x2="200" y2="118"></line>
-            <line class="clock-minute" id="minuteHand" x1="200" y1="200" x2="200" y2="78"></line>
-            <line class="clock-second" id="secondHand" x1="200" y1="218" x2="200" y2="58"></line>
-            <circle class="clock-pin-outer" cx="200" cy="200" r="7"></circle>
-          </g>
+      <div class="title">考试倒计时时钟</div>
+      <!-- 指针式时钟（默认关闭，设置页可开启） -->
+      <div class="analog-clock" id="analogClock" aria-hidden="true">
+        <svg class="ac-bg" viewBox="0 0 461 461" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true">
+          <path class="ac-petal" clip-rule="evenodd" fill-rule="evenodd" d="M93.6379 63.9405C89.7543 78.4344 78.4333 89.7554 63.9394 93.639L56.4989 95.6327C34.0934 101.636 20.7969 124.666 26.8005 147.072L28.7201 154.236C32.6038 168.73 28.46 184.195 17.8497 194.805L12.3015 200.353C-4.1005 216.755 -4.10051 243.348 12.3015 259.75L17.9236 265.372C28.5338 275.983 32.6776 291.447 28.794 305.941L26.8004 313.382C20.7968 335.787 34.0933 358.817 56.4989 364.821L63.9395 366.815C78.4334 370.698 89.7544 382.019 93.638 396.513L95.6322 403.956C101.636 426.361 124.666 439.658 147.071 433.654L154.513 431.66C169.007 427.777 184.472 431.92 195.082 442.531L200.353 447.802C216.755 464.204 243.348 464.204 259.75 447.802L265.097 442.455C275.707 431.845 291.172 427.701 305.666 431.585L313.383 433.653C335.788 439.656 358.818 426.36 364.822 403.954L366.815 396.515C370.699 382.021 382.02 370.7 396.514 366.816L403.955 364.822C426.361 358.819 439.657 335.789 433.654 313.383L431.586 305.665C427.702 291.172 431.846 275.707 442.456 265.096L447.802 259.75C464.204 243.348 464.204 216.755 447.802 200.353L442.53 195.081C431.92 184.471 427.776 169.006 431.66 154.512L433.654 147.071C439.657 124.665 426.361 101.635 403.955 95.6312L396.514 93.6373C382.02 89.7537 370.699 78.4327 366.815 63.9389L364.822 56.4994C358.818 34.0938 335.788 20.7974 313.383 26.8009L305.942 28.7946C291.448 32.6782 275.983 28.5345 265.373 17.9242L259.75 12.3015C243.348 -4.10051 216.755 -4.1005 200.353 12.3015L194.806 17.8491C184.196 28.4593 168.731 32.6031 154.237 28.7195L147.071 26.7995C124.666 20.7959 101.636 34.0924 95.6322 56.498L93.6379 63.9405Z"/>
         </svg>
+        <div class="ac-center">
+          <div class="ac-hand ac-hour" id="acHour"></div>
+          <div class="ac-hand ac-minute" id="acMinute"></div>
+          <div class="ac-hand ac-second" id="acSecond"></div>
+        </div>
+        <div class="ac-pin"></div>
       </div>
+      <div class="now-time" id="nowTime" title="点击放大">--:--:--</div>
+      <div class="now-date" id="nowDate">----/--/--</div>
       <div class="divider"></div>
       <div class="main-label" id="mainLabel">当前状态</div>
       <div class="main-name waiting" id="mainName">暂无考试安排</div>
       <div class="cd-row" id="cdRow" title="点击放大">
+        <div class="cd-unit"><div class="cd-num" id="cdA">0</div><div class="cd-text" id="cdAT">天</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
       </div>
       <div class="status" id="status">请添加考试</div>
+      <div class="exam-progress-wrap">
+        <div class="progress-caption"><span>考试进度</span><b id="examProgressText">0%</b></div>
+        <mdui-linear-progress id="examProgress" value="0"></mdui-linear-progress>
+      </div>
     </div>
   </main>
 </div>
+
+<!-- ==================== 底部应用栏：首页 / 设置 + 播放全域时间 FAB ==================== -->
+<mdui-bottom-app-bar id="quickBar" class="quick-bar" fab-detach scroll-behavior="hide" scroll-threshold="30">
+  <mdui-button-icon id="navHomeBtn" icon="home" title="首页" aria-label="首页"></mdui-button-icon>
+  <mdui-button-icon id="navSettingsBtn" icon="settings" title="设置" aria-label="设置"></mdui-button-icon>
+  <mdui-button-icon id="openPlanBtn" icon="edit_calendar" title="编辑考试计划" aria-label="编辑考试计划"></mdui-button-icon>
+  <div style="flex-grow: 1"></div>
+  <mdui-fab id="playFab" icon="play_arrow" title="播放全域时间界面" aria-label="播放全域时间界面"></mdui-fab>
+</mdui-bottom-app-bar>
 
 <!-- ==================== 焦点放大模式 ==================== -->
 <div id="focusOverlay" class="focus-overlay" aria-hidden="true">
@@ -900,11 +1101,22 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
       <div class="focus-cd-label" id="focusCdLabel">距离考试开始</div>
       <div class="focus-cd-name" id="focusCdName">--</div>
       <div class="focus-cd-row">
+        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdA">0</div><div class="focus-cd-text" id="focusCdAT">天</div></div>
         <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdB">00</div><div class="focus-cd-text" id="focusCdBT">时</div></div>
         <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdC">00</div><div class="focus-cd-text" id="focusCdCT">分</div></div>
         <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdD">00</div><div class="focus-cd-text" id="focusCdDT">秒</div></div>
       </div>
-      <div class="focus-status" id="focusStatus">请添加考试</div>
+      <div class="focus-status" id="focusStatus">请添加考试日程</div>
+      <div class="exam-progress-wrap">
+        <div class="progress-caption"><span>考试进度</span><b id="focusProgressText">0%</b></div>
+        <mdui-linear-progress id="focusProgress" value="0"></mdui-linear-progress>
+      </div>
+      <div class="focus-widgets" id="focusWidgets">
+        <div class="fw-item fw-subject" id="fwSubject" hidden>--</div>
+        <div class="fw-item fw-range" id="fwRange" hidden>--</div>
+        <div class="fw-item fw-next" id="fwNext" hidden>--</div>
+        <div class="fw-item fw-clock" id="fwClock" hidden>--:--:--</div>
+      </div>
     </div>
   </div>
 </div>
@@ -937,25 +1149,8 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 
       <section class="card" aria-labelledby="addTitle">
         <h2 class="list-title" id="addTitle">添加考试</h2>
-        <div class="form-row subject-form-row">
-          <mdui-button id="subjectPickerBtn" class="subject-picker" variant="outlined" icon="school">科目：语文</mdui-button>
-          <div class="subject-dropdown" id="subjectDropdown">
-            <div class="subject-grid" id="subjectGrid">
-              <button class="subject-grid-button selected" type="button" data-subject="语文">语</button>
-              <button class="subject-grid-button" type="button" data-subject="数学">数</button>
-              <button class="subject-grid-button" type="button" data-subject="英语">英</button>
-              <button class="subject-grid-button" type="button" data-subject="物理">物</button>
-              <button class="subject-grid-button" type="button" data-subject="化学">化</button>
-              <button class="subject-grid-button" type="button" data-subject="生物">生</button>
-              <button class="subject-grid-button" type="button" data-subject="政治">政</button>
-              <button class="subject-grid-button" type="button" data-subject="历史">史</button>
-              <button class="subject-grid-button" type="button" data-subject="地理">地</button>
-            </div>
-            <div class="subject-grid-actions">
-              <mdui-button id="subjectGridCustom" variant="text">自定义科目</mdui-button>
-            </div>
-          </div>
-          <mdui-select id="subjectSelect" variant="outlined" label="科目" style="display:none" aria-hidden="true">
+        <div class="form-row">
+          <mdui-select id="subjectSelect" variant="outlined" label="科目">
             <mdui-menu-item value="语文">语文</mdui-menu-item>
             <mdui-menu-item value="数学">数学</mdui-menu-item>
             <mdui-menu-item value="英语">英语</mdui-menu-item>
@@ -968,14 +1163,88 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
             <mdui-menu-item value="__custom__">自定义…</mdui-menu-item>
           </mdui-select>
         </div>
-        <div class="form-row"><div class="datetime-field-wrap"><mdui-text-field id="startInput" label="考试开始时间" variant="outlined" type="datetime-local" clearable></mdui-text-field><span class="datetime-placeholder" aria-hidden="true">请选择考试开始时间</span></div></div>
-        <div class="form-row"><div class="datetime-field-wrap"><mdui-text-field id="endInput" label="考试截止时间" variant="outlined" type="datetime-local" clearable></mdui-text-field><span class="datetime-placeholder" aria-hidden="true">请选择考试截止时间</span></div></div>
+        <div class="form-row"><mdui-text-field id="startInput" label="开始时间" variant="outlined" type="datetime-local" clearable></mdui-text-field></div>
+
+        <!-- 选择开始时间后自动展开：快捷设定结束时间 -->
+        <div class="quick-end-row" id="quickEndRow" aria-hidden="true">
+          <div class="quick-end-clip">
+            <div class="quick-end-hint">快捷设定结束时间</div>
+            <div class="quick-end-chips" id="quickEndChips">
+              <mdui-chip data-minutes="45">45min后结束</mdui-chip>
+              <mdui-chip data-minutes="60">60min后结束</mdui-chip>
+              <mdui-chip data-minutes="75">75min后结束</mdui-chip>
+              <mdui-chip data-minutes="90">90min后结束</mdui-chip>
+              <mdui-chip data-minutes="120">120min后结束</mdui-chip>
+              <mdui-chip data-minutes="150">150min后结束</mdui-chip>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row"><mdui-text-field id="endInput" label="结束时间" variant="outlined" type="datetime-local" clearable></mdui-text-field></div>
         <mdui-button id="addBtn" variant="filled" class="btn-primary" icon="add">添加考试</mdui-button>
       </section>
 
       <section class="card" aria-labelledby="examListTitle">
         <h2 class="list-title" id="examListTitle">考试列表</h2>
         <div id="examList"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 设置副页面 ==================== -->
+<div id="settingsPageOverlay" class="settings-page-overlay" aria-hidden="true">
+  <div class="settings-page-content">
+    <div class="settings-inner">
+      <div class="plan-header">
+        <h1 class="page-title">设置</h1>
+      </div>
+
+      <section class="card" aria-labelledby="themeSettingsTitle">
+        <h2 class="list-title setting-title" id="themeSettingsTitle"><mdui-icon name="brightness_auto"></mdui-icon>深浅色模式</h2>
+        <p class="settings-desc">选择应用的显示主题。</p>
+        <mdui-segmented-button-group id="themeSegmented" class="theme-segmented" selects="single" full-width>
+          <mdui-segmented-button value="auto" icon="brightness_auto">跟随系统</mdui-segmented-button>
+          <mdui-segmented-button value="light" icon="light_mode">浅色</mdui-segmented-button>
+          <mdui-segmented-button value="dark" icon="dark_mode">深色</mdui-segmented-button>
+        </mdui-segmented-button-group>
+      </section>
+
+      <section class="card" aria-labelledby="colorSettingsTitle">
+        <h2 class="list-title setting-title" id="colorSettingsTitle"><mdui-icon name="palette"></mdui-icon>主题配色</h2>
+        <p class="settings-desc">选择一个颜色，自动生成整套浅色与深色配色。</p>
+        <div class="color-swatches" id="colorSwatches">
+          <button type="button" class="color-swatch" data-color="#006463" style="background:#006463" title="#006463" aria-label="配色 #006463"></button>
+          <button type="button" class="color-swatch" data-color="#6750a4" style="background:#6750a4" title="#6750a4" aria-label="配色 #6750a4"></button>
+          <button type="button" class="color-swatch" data-color="#005ac1" style="background:#005ac1" title="#005ac1" aria-label="配色 #005ac1"></button>
+          <button type="button" class="color-swatch" data-color="#9c4146" style="background:#9c4146" title="#9c4146" aria-label="配色 #9c4146"></button>
+          <button type="button" class="color-swatch" data-color="#3f6212" style="background:#3f6212" title="#3f6212" aria-label="配色 #3f6212"></button>
+          <button type="button" class="color-swatch" data-color="#7d5260" style="background:#7d5260" title="#7d5260" aria-label="配色 #7d5260"></button>
+        </div>
+        <div class="custom-color-row">
+          <label for="customColorInput">自定义颜色</label>
+          <input type="color" id="customColorInput" value="#006463" aria-label="自定义主题色">
+          <span class="custom-color-value" id="customColorValue">#006463</span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="analogSettingsTitle">
+        <h2 class="list-title setting-title" id="analogSettingsTitle"><mdui-icon name="schedule"></mdui-icon>指针式时钟</h2>
+        <p class="settings-desc">在首页数字时钟上方显示指针式时钟。</p>
+        <mdui-switch id="analogClockSwitch" aria-label="启用指针式时钟"></mdui-switch>
+      </section>
+
+      <section class="card" aria-labelledby="widgetSettingsTitle">
+        <h2 class="list-title setting-title" id="widgetSettingsTitle"><mdui-icon name="widgets"></mdui-icon>大时间界面小部件</h2>
+        <p class="settings-desc">勾选要在放大界面中显示的内容，下方为实时预览。</p>
+        <div class="widget-chips" id="widgetChips">
+          <mdui-chip selectable filter data-widget="subject" selected>当前科目</mdui-chip>
+          <mdui-chip selectable filter data-widget="range" selected>考试时间段</mdui-chip>
+          <mdui-chip selectable filter data-widget="next" selected>下一科目</mdui-chip>
+          <mdui-chip selectable filter data-widget="clock" selected>当前时间</mdui-chip>
+        </div>
+        <div class="preview-caption">效果预览</div>
+        <div class="widget-preview" id="widgetPreview"></div>
       </section>
     </div>
   </div>
@@ -997,12 +1266,71 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 
 <script>
 /* =========================================================
-   主题色
+   动态主题配色
+   基于 mdui.setColorScheme(种子色) 自动生成整套浅色/深色配色。
+   默认种子色 #006463，用户可在设置页选择并持久化。
    ========================================================= */
-(function() {
-  if (window.mdui && typeof mdui.setColorScheme === 'function') {
-    mdui.setColorScheme('#036C6D');
+(function initColorScheme() {
+  const COLOR_KEY = 'exam-clock-color';
+  const DEFAULT_COLOR = '#006463';
+  const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+  function normalize(c) {
+    if (typeof c !== 'string') return DEFAULT_COLOR;
+    const s = c.trim();
+    return HEX_RE.test(s) ? s.toLowerCase() : DEFAULT_COLOR;
   }
+  function getSaved() {
+    try { return normalize(localStorage.getItem(COLOR_KEY) || DEFAULT_COLOR); }
+    catch { return DEFAULT_COLOR; }
+  }
+  function applyColor(color) {
+    const c = normalize(color);
+    if (window.mdui && typeof mdui.setColorScheme === 'function') {
+      mdui.setColorScheme(c);
+    }
+    return c;
+  }
+  function saveColor(color) {
+    const c = normalize(color);
+    try { localStorage.setItem(COLOR_KEY, c); } catch {}
+    applyColor(c);
+    syncColorUI(c);
+    return c;
+  }
+
+  const swatches = Array.from(document.querySelectorAll('#colorSwatches .color-swatch'));
+  const colorInput = document.getElementById('customColorInput');
+  const colorValue = document.getElementById('customColorValue');
+
+  function syncColorUI(c) {
+    swatches.forEach(s => s.classList.toggle('selected', s.dataset.color.toLowerCase() === c));
+    if (colorInput && colorInput.value.toLowerCase() !== c) colorInput.value = c;
+    if (colorValue) colorValue.textContent = c;
+  }
+
+  // 初始应用：优先用户保存色，否则默认 #006463
+  const initial = getSaved();
+  applyColor(initial);
+  // 等 DOM 就绪后同步选择器状态（脚本在 body 末尾，元素已存在）
+  syncColorUI(initial);
+
+  swatches.forEach(s => {
+    s.addEventListener('click', () => saveColor(s.dataset.color));
+  });
+  if (colorInput) {
+    // input 事件实时预览；change 事件在选色结束时持久化
+    colorInput.addEventListener('input', (e) => {
+      const c = normalize(e.target.value);
+      applyColor(c);
+      if (colorValue) colorValue.textContent = c;
+      swatches.forEach(s => s.classList.toggle('selected', s.dataset.color.toLowerCase() === c));
+    });
+    colorInput.addEventListener('change', (e) => saveColor(e.target.value));
+  }
+
+  // 暴露给外部（如需程序化改色）
+  window.setExamColorScheme = saveColor;
 })();
 
 /* =========================================================
@@ -1010,6 +1338,7 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
    ========================================================= */
 (function initThemeToggle() {
   const btn = document.getElementById('themeToggleBtn');
+  const seg = document.getElementById('themeSegmented');
   const root = document.documentElement;
   const THEME_KEY = 'exam-clock-theme';
 
@@ -1023,14 +1352,22 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       btn.setAttribute('icon', prefersDark ? 'light_mode' : 'dark_mode');
     }
+    // 同步分段按钮选中态（避免与 change 事件互相触发）
+    if (seg && seg.value !== theme) seg.value = theme;
   }
 
   function getSaved() {
     try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch { return 'auto'; }
   }
 
+  function saveTheme(theme) {
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
+    applyTheme(theme);
+  }
+
   applyTheme(getSaved());
 
+  // 右上角按钮：循环切换（保持原有行为）
   btn.addEventListener('click', () => {
     const cur = getSaved();
     let next;
@@ -1042,12 +1379,117 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
     } else {
       next = 'dark';
     }
-    try { localStorage.setItem(THEME_KEY, next); } catch {}
-    applyTheme(next);
+    saveTheme(next);
   });
+
+  // 设置页分段按钮：直接选择
+  if (seg) {
+    seg.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'auto' || val === 'light' || val === 'dark') saveTheme(val);
+    });
+  }
 
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getSaved() === 'auto') applyTheme('auto');
+  });
+})();
+
+/* =========================================================
+   指针式时钟（取自 Material You NewTab）
+   - 开关控制显隐，默认关闭，localStorage 持久化
+   - 首页与大时间界面（焦点时钟视图）同步展示，统一驱动
+   - 时/分/秒按本地时间角度旋转
+   ========================================================= */
+(function initAnalogClock() {
+  const KEY = 'analog-clock-enabled';
+  const sw = document.getElementById('analogClockSwitch');
+  const mainClock = document.getElementById('analogClock');
+  if (!sw || !mainClock) return;
+
+  // 克隆一份到大时间界面（焦点时钟视图），去掉重复 id，避免 id 冲突
+  const focusClockView = document.getElementById('focusClockView');
+  if (focusClockView && !focusClockView.querySelector('.analog-clock')) {
+    const clone = mainClock.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    focusClockView.insertBefore(clone, focusClockView.firstChild);
+  }
+
+  // 所有指针时钟实例：{ root, hour, minute, second }
+  const clocks = Array.from(document.querySelectorAll('.analog-clock')).map(root => ({
+    root,
+    hour: root.querySelector('.ac-hour'),
+    minute: root.querySelector('.ac-minute'),
+    second: root.querySelector('.ac-second'),
+  })).filter(c => c.hour && c.minute && c.second);
+  if (!clocks.length) return;
+
+  let timerId = null;
+  let baseTime = null;            // 基准时刻（连续累计角度用）
+  let baseSec = 0, baseMin = 0, baseHour = 0;
+
+  function getEnabled() {
+    // 默认关闭：只有明确为 'true' 才启用
+    try { return localStorage.getItem(KEY) === 'true'; } catch { return false; }
+  }
+
+  function tick() {
+    const now = new Date();
+    // 首次（或重新启用）时记录基准角度，之后按真实经过时间连续累加，
+    // 跨 59→0 秒/59→0 分/12→1 时都不会逆时针跳回，而是继续顺时针转。
+    if (baseTime === null) {
+      baseTime = now.getTime();
+      const s = now.getSeconds();
+      const m = now.getMinutes();
+      const h = now.getHours();
+      baseSec = s * 6;                    // 6°/秒
+      baseMin = m * 6 + s / 10;           // 6°/分 + 秒微调
+      baseHour = (h % 12) * 30 + m / 2;   // 30°/时 + 分微调
+    }
+    const elapsed = (now.getTime() - baseTime) / 1000;
+    const secDeg = baseSec + Math.floor(elapsed) * 6;  // 秒针：每秒递进一格(6°)，不再连续单调移动
+    const minDeg = baseMin + elapsed * 0.1;      // 分针：0.1°/秒(=6°/分)
+    const hourDeg = baseHour + elapsed / 120;    // 时针：1/120°/秒(=30°/时)
+    clocks.forEach(c => {
+      c.second.style.transform = 'rotate(' + secDeg + 'deg)';
+      c.minute.style.transform = 'rotate(' + minDeg + 'deg)';
+      c.hour.style.transform = 'rotate(' + hourDeg + 'deg)';
+    });
+  }
+
+  function start() {
+    if (timerId) return;
+    clocks.forEach(c => {
+      c.hour.style.transition = 'transform 1.5s';
+      c.minute.style.transition = 'transform 1.5s';
+      c.second.style.transition = 'transform 1s';
+    });
+    baseTime = null;   // 重新启用时以当前时刻为基准
+    tick();
+    timerId = setInterval(tick, 500);
+  }
+
+  function stop() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+  }
+
+  function apply(enabled) {
+    clocks.forEach(c => {
+      c.root.classList.toggle('enabled', enabled);
+      c.root.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+    });
+    sw.checked = enabled;
+    if (enabled) start(); else stop();
+  }
+
+  apply(getEnabled());
+
+  sw.addEventListener('change', () => {
+    const enabled = sw.checked;
+    try { localStorage.setItem(KEY, enabled ? 'true' : 'false'); } catch {}
+    apply(enabled);
   });
 })();
 
@@ -1059,10 +1501,7 @@ const KEY = 'exam_schedule_v2';
 function pad(n) { return String(n).padStart(2, '0'); }
 
 function getExams() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(KEY));
-    return Array.isArray(stored) ? stored : [];
-  }
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; }
   catch { return []; }
 }
 function saveExams(list) {
@@ -1088,74 +1527,44 @@ function getPhase(startMs, endMs, now) {
 }
 
 function diffParts(absDiff) {
-  let d = Math.max(0, Number.isFinite(absDiff) ? absDiff : 0);
+  let d = Math.max(0, absDiff);
+  const days = Math.floor(d / 86400000); d -= days * 86400000;
   const hrs  = Math.floor(d / 3600000);  d -= hrs  * 3600000;
   const mins = Math.floor(d / 60000);    d -= mins * 60000;
   const secs = Math.floor(d / 1000);
-  return { hrs, mins, secs };
+  return { days, hrs, mins, secs };
 }
 
-function getExamProgress(exam, now) {
-  const phase = getPhase(exam.startMs, exam.endMs, now);
-  if (phase === 'waiting') {
-    const parts = diffParts(exam.startMs - now);
-    return {
-      phase,
-      parts,
-      label: '距离考试开始',
-      status: '倒计时中',
-      urgent: parts.hrs === 0 && parts.mins < 30,
-    };
-  }
-  if (phase === 'running') {
-    return {
-      phase,
-      parts: diffParts(now - exam.startMs),
-      label: '考试进行中',
-      status: '已开始，计时中',
-      urgent: false,
-    };
-  }
-  return {
-    phase,
-    parts: diffParts(exam.endMs - exam.startMs),
-    label: '考试已结束',
-    status: '已结束',
-    urgent: false,
-  };
+/* 考试时间进度：已进行时间 / 考试总时长，返回 0~1。
+   waiting=0，running 按实际比例，ended=1；无考试或时长非法返回 0。 */
+function examProgress(target, now) {
+  if (!target) return 0;
+  const total = target.endMs - target.startMs;
+  if (!isFinite(total) || total <= 0) return 0;
+  const phase = getPhase(target.startMs, target.endMs, now);
+  if (phase === 'waiting') return 0;
+  if (phase === 'ended') return 1;
+  const ratio = (now - target.startMs) / total;
+  return Math.min(1, Math.max(0, ratio));
 }
 
-function createExamSnapshot(now) {
+/* 同步进度条的值与百分比文字。始终写入数值，避免进入不确定动画态。 */
+function setExamProgress(barId, textId, target, now) {
+  const bar = document.getElementById(barId);
+  const text = document.getElementById(textId);
+  const ratio = examProgress(target, now);
+  if (bar) bar.value = ratio;
+  if (text) text.textContent = Math.round(ratio * 100) + '%';
+}
+
+function getActiveExam(now) {
   const exams = getExams()
-    .filter(ex => ex && typeof ex === 'object')
-    .map(ex => ({
-      ...ex,
-      id: ex.id === undefined || ex.id === null ? '' : String(ex.id),
-      startMs: new Date(ex.start).getTime(),
-      endMs: new Date(ex.end).getTime(),
-    }))
-    .filter(ex => ex.id.length > 0
-      && typeof ex.name === 'string'
-      && ex.name.trim().length > 0
-      && typeof ex.start === 'string'
-      && typeof ex.end === 'string'
-      && Number.isFinite(ex.startMs)
-      && Number.isFinite(ex.endMs)
-      && ex.endMs > ex.startMs)
-    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
-
-  const running = exams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'running');
-  const upcoming = exams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'waiting');
-  const mostRecentlyEnded = exams
-    .filter(ex => getPhase(ex.startMs, ex.endMs, now) === 'ended')
-    .sort((a, b) => b.endMs - a.endMs)[0];
-  const target = running || upcoming || mostRecentlyEnded || null;
-
-  return {
-    exams,
-    target,
-    progress: target ? getExamProgress(target, now) : null,
-  };
+    .map(ex => ({ ...ex, startMs: new Date(ex.start).getTime(), endMs: new Date(ex.end).getTime() }))
+    .sort((a, b) => a.startMs - b.startMs);
+  for (const ex of exams) {
+    if (getPhase(ex.startMs, ex.endMs, now) !== 'ended') return ex;
+  }
+  return null;
 }
 
 /* =========================================================
@@ -1163,82 +1572,114 @@ function createExamSnapshot(now) {
    ========================================================= */
 function updateClock() {
   const now = new Date();
-  const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
-  const minutes = now.getMinutes() + seconds / 60;
-  const hours = (now.getHours() % 12) + minutes / 60;
-
-  const hourHand = document.getElementById('hourHand');
-  const minuteHand = document.getElementById('minuteHand');
-  const secondHand = document.getElementById('secondHand');
-  const clockDate = document.getElementById('clockDate');
-  if (hourHand) hourHand.setAttribute('transform', 'rotate(' + (hours * 30) + ' 200 200)');
-  if (minuteHand) minuteHand.setAttribute('transform', 'rotate(' + (minutes * 6) + ' 200 200)');
-  if (secondHand) secondHand.setAttribute('transform', 'rotate(' + (seconds * 6) + ' 200 200)');
-  if (clockDate) clockDate.textContent =
+  const nowTimeEl = document.getElementById('nowTime');
+  const nowDateEl = document.getElementById('nowDate');
+  if (nowTimeEl) nowTimeEl.textContent =
+    pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+  if (nowDateEl) nowDateEl.textContent =
     now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate())
-    + ' ' + ['日','一','二','三','四','五','六'][now.getDay()];
+    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
 }
 
-function renderMain(snapshot) {
+function renderMain(exams, now) {
   const mainName  = document.getElementById('mainName');
   const mainLabel = document.getElementById('mainLabel');
   const status    = document.getElementById('status');
+  const cdA = document.getElementById('cdA');
   const cdB = document.getElementById('cdB');
   const cdC = document.getElementById('cdC');
   const cdD = document.getElementById('cdD');
+  const cdAT = document.getElementById('cdAT');
   const cdBT = document.getElementById('cdBT');
   const cdCT = document.getElementById('cdCT');
   const cdDT = document.getElementById('cdDT');
   if (!mainName) return;
 
-  if (!snapshot.target) {
+  let target = null;
+  for (const ex of exams) {
+    if (getPhase(ex.startMs, ex.endMs, now) !== 'ended') { target = ex; break; }
+  }
+
+  if (!target) {
     mainName.textContent = '暂无考试安排';
     mainName.className = 'main-name waiting';
     mainLabel.textContent = '当前状态';
     status.textContent = '请添加考试';
     status.className = 'status';
-    cdB.textContent = '00'; cdC.textContent = '00'; cdD.textContent = '00';
-    cdBT.textContent = '时';
+    cdA.textContent = '0'; cdB.textContent = '00';
+    cdC.textContent = '00'; cdD.textContent = '00';
+    cdAT.textContent = '天'; cdBT.textContent = '时';
     cdCT.textContent = '分'; cdDT.textContent = '秒';
-    [cdB, cdC, cdD].forEach(e => e.className = 'cd-num');
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num');
+    setExamProgress('examProgress', 'examProgressText', null, now);
     return;
   }
 
-  const { target, progress } = snapshot;
-  const { phase, parts, label, status: statusText, urgent } = progress;
+  const phase = getPhase(target.startMs, target.endMs, now);
   mainName.textContent = target.name;
   mainName.className = 'main-name ' + phase;
-  mainLabel.textContent = label;
-  status.textContent = statusText;
-  status.className = 'status ' + phase;
-  cdB.textContent = pad(parts.hrs);
-  cdC.textContent = pad(parts.mins);
-  cdD.textContent = pad(parts.secs);
-  cdBT.textContent = '时';
-  cdCT.textContent = '分';
-  cdDT.textContent = '秒';
-  [cdB, cdC, cdD].forEach(e => {
-    e.className = 'cd-num' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
-  });
+
+  if (phase === 'waiting') {
+    mainLabel.textContent = '距离考试开始';
+    const p = diffParts(target.startMs - now);
+    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+    [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'cd-num' + (urgent ? ' urgent' : ''); });
+    status.textContent = '倒计时中';
+    status.className = 'status waiting';
+  } else if (phase === 'running') {
+    mainLabel.textContent = '距离考试结束';
+    const p = diffParts(target.endMs - now);
+    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+    [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'cd-num running' + (urgent ? ' urgent' : ''); });
+    status.textContent = '考试进行中，剩余时间';
+    status.className = 'status running';
+  } else {
+    mainLabel.textContent = '考试已结束';
+    const p = diffParts(target.endMs - target.startMs);
+    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num ended');
+    status.textContent = '已结束';
+    status.className = 'status ended';
+  }
+  setExamProgress('examProgress', 'examProgressText', target, now);
 }
 
-function renderList(snapshot, now) {
+function renderList(exams, now) {
   const container = document.getElementById('examList');
   if (!container) return;
-  if (snapshot.exams.length === 0) {
+  if (exams.length === 0) {
     container.innerHTML = '<div class="empty">暂无考试</div>';
     return;
   }
-  container.innerHTML = snapshot.exams.map(ex => {
-    const { phase, parts, urgent } = getExamProgress(ex, now);
-    const cdText = phase === 'waiting'
-      ? '剩 ' + pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs)
-      : phase === 'running'
-        ? '已考 ' + pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs)
-        : '已结束';
-    const cdCls = phase === 'waiting' ? (urgent ? 'urgent' : '') : phase;
-    const activeClass = snapshot.target && ex.id === snapshot.target.id ? 'active' : '';
-    return `<div class="exam-item ${activeClass}">
+  container.innerHTML = exams.map(ex => {
+    const phase = getPhase(ex.startMs, ex.endMs, now);
+    let cdText = '';
+    let cdCls = '';
+    if (phase === 'waiting') {
+      const p = diffParts(ex.startMs - now);
+      cdText = '剩 ' + (p.days > 0 ? p.days + '天 ' : '') + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      cdCls = p.days === 0 && p.hrs === 0 && p.mins < 30 ? 'urgent' : '';
+    } else if (phase === 'running') {
+      const p = diffParts(ex.endMs - now);
+      cdText = '剩余 ' + (p.days > 0 ? p.days + '天 ' : '') + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      cdCls = urgent ? 'urgent' : 'running';
+    } else {
+      cdText = '已结束';
+      cdCls = 'ended';
+    }
+    return `<div class="exam-item ${phase === 'waiting' ? 'active' : ''}">
       <div class="exam-info">
         <div class="exam-name">${escapeHtml(ex.name)}</div>
         <div class="exam-time">${fmtDT(ex.start)} — ${fmtDT(ex.end)}</div>
@@ -1251,33 +1692,17 @@ function renderList(snapshot, now) {
 
 function render() {
   const now = Date.now();
-  const snapshot = createExamSnapshot(now);
-  renderMain(snapshot);
-  renderList(snapshot, now);
-  if (focusMode.active) renderFocus(snapshot, now);
+  const exams = getExams()
+    .map(ex => ({ ...ex, startMs: new Date(ex.start).getTime(), endMs: new Date(ex.end).getTime() }))
+    .sort((a, b) => a.startMs - b.startMs);
+  renderMain(exams, now);
+  renderList(exams, now);
+  if (typeof updateWidgetPreview === 'function') updateWidgetPreview(now);
+  if (focusMode.active) renderFocus(now);
 }
-
-let countdownRenderTimer = null;
-function scheduleCountdownRender() {
-  clearTimeout(countdownRenderTimer);
-  if (document.hidden) return;
-  countdownRenderTimer = setTimeout(() => {
-    render();
-    scheduleCountdownRender();
-  }, 1000 - (Date.now() % 1000));
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    clearTimeout(countdownRenderTimer);
-    return;
-  }
-  render();
-  scheduleCountdownRender();
-});
 
 /* =========================================================
-   一镜到底：计划管理页
+   一镜到底：计划管理页（可中断 + 任意方向滑动返回）
    ========================================================= */
 (function initMorph() {
   const openBtn = document.getElementById('openPlanBtn');
@@ -1289,18 +1714,33 @@ document.addEventListener('visibilitychange', () => {
   if (!openBtn || !overlay) return;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const DURATION = prefersReducedMotion ? 0 : 380;
-  const RADIUS_TAIL = prefersReducedMotion ? 0 : 150;
-  const RADIUS_DELAY = prefersReducedMotion ? 0 : 40;
-  const RADIUS_HOLD = prefersReducedMotion ? 0 : 24;
-  const RADIUS_LEAD = prefersReducedMotion ? 0 : 45;
-  const FADE = prefersReducedMotion ? 0 : 40;
+  const DURATION = prefersReducedMotion ? 0 : 650;
+  const RADIUS_TAIL = prefersReducedMotion ? 0 : 260;
+  const RADIUS_DELAY = prefersReducedMotion ? 0 : 120;
+  const RADIUS_HOLD = prefersReducedMotion ? 0 : 48;
+  const RADIUS_LEAD = prefersReducedMotion ? 0 : 80;
+  const RIPPLE_WAIT = prefersReducedMotion ? 0 : 100;
+  const FADE = prefersReducedMotion ? 0 : 80;
   const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
-  const FALLBACK_COLOR = '#036C6D';
+  const FALLBACK_COLOR = '#006463';
 
   let morphState = 'idle';
   let animToken = 0;
   let radiusTimer = null;
+
+  /* 滚动锁定：防止计划页滑动穿透到底层 */
+  let savedHtmlOverflow = '';
+  let savedBodyOverflow = '';
+  function lockBodyScroll() {
+    savedHtmlOverflow = document.documentElement.style.overflow;
+    savedBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+  function unlockBodyScroll() {
+    document.documentElement.style.overflow = savedHtmlOverflow;
+    document.body.style.overflow = savedBodyOverflow;
+  }
 
   function getButtonColor() {
     const cs = getComputedStyle(openBtn);
@@ -1341,6 +1781,12 @@ document.addEventListener('visibilitychange', () => {
   function radiusTransition(delay) { return `border-radius ${RADIUS_TAIL}ms ${EASING} ${delay}ms`; }
   function clearRadiusTimer() { if (radiusTimer) { clearTimeout(radiusTimer); radiusTimer = null; } }
 
+  function currentMorphRect() {
+    const r = morphLayer.getBoundingClientRect();
+    const radius = parseFloat(getComputedStyle(morphLayer).borderRadius) || 0;
+    return { left: r.left, top: r.top, width: r.width, height: r.height, radius: radius + 'px' };
+  }
+
   function waitSize(el) {
     return new Promise((resolve) => {
       if (DURATION === 0) { resolve(); return; }
@@ -1353,10 +1799,10 @@ document.addEventListener('visibilitychange', () => {
   }
 
   async function openAnim() {
-    if (morphState !== 'idle') return;
     const token = ++animToken;
     morphState = 'opening';
     clearRadiusTimer();
+    clearGestureStyles();
 
     const rect = openBtn.getBoundingClientRect();
     const bg = getButtonColor();
@@ -1371,7 +1817,7 @@ document.addEventListener('visibilitychange', () => {
     setRect(el, rect, radius);
     void el.offsetWidth;
 
-    await new Promise((r) => setTimeout(r, prefersReducedMotion ? 0 : 40));
+    await new Promise((r) => setTimeout(r, RIPPLE_WAIT));
     if (token !== animToken) return;
 
     el.classList.add('visible');
@@ -1402,26 +1848,28 @@ document.addEventListener('visibilitychange', () => {
 
     morphState = 'open';
     document.body.classList.add('font-page-open');
+    lockBodyScroll();
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => { if (token === animToken) overlay.classList.add('content-in'); });
 
-    el.style.transition = 'opacity 120ms ease';
+    el.style.transition = 'opacity 280ms ease';
     el.style.opacity = '0';
     setTimeout(() => {
       if (token !== animToken) return;
       el.style.display = 'none';
       el.classList.remove('visible');
-    }, 140);
+    }, 300);
   }
 
-  async function closeAnim() {
-    if (morphState !== 'open') return;
+  async function closeAnim(fromInterrupt = false) {
     const token = ++animToken;
     morphState = 'closing';
     clearRadiusTimer();
-
     document.body.classList.remove('font-page-open');
+    unlockBodyScroll();
+    clearGestureStyles();
+
     overlay.classList.remove('content-in');
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
@@ -1434,18 +1882,25 @@ document.addEventListener('visibilitychange', () => {
 
     el.style.transition = 'none';
     el.style.display = 'block';
-    el.style.background = surface;
     el.style.opacity = '1';
-    el.style.left = '0px';
-    el.style.top = '0px';
-    el.style.width = window.innerWidth + 'px';
-    el.style.height = window.innerHeight + 'px';
-    el.style.borderRadius = '0px';
+
+    if (fromInterrupt) {
+      const cur = currentMorphRect();
+      el.style.background = getComputedStyle(el).backgroundColor;
+      setRect(el, cur, cur.radius);
+    } else {
+      el.style.background = surface;
+      el.style.left = '0px';
+      el.style.top = '0px';
+      el.style.width = window.innerWidth + 'px';
+      el.style.height = window.innerHeight + 'px';
+      el.style.borderRadius = '0px';
+    }
     void el.offsetWidth;
 
     el.classList.add('visible');
     el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
-      + `, background-color ${DURATION}ms ${EASING}`;
+      + `, background-color ${DURATION * 2}ms ${EASING}`;
     requestAnimationFrame(() => {
       if (token !== animToken) return;
       el.style.left = rect.left + 'px';
@@ -1459,9 +1914,12 @@ document.addEventListener('visibilitychange', () => {
     await waitSize(el);
     if (token !== animToken) return;
 
-    el.style.transition = 'opacity 100ms ease';
+    await new Promise((r) => setTimeout(r, DURATION));
+    if (token !== animToken) return;
+
+    el.style.transition = 'opacity 180ms ease';
     el.style.opacity = '0';
-    await new Promise((r) => setTimeout(r, 110));
+    await new Promise((r) => setTimeout(r, 200));
     if (token !== animToken) return;
 
     el.style.display = 'none';
@@ -1470,12 +1928,249 @@ document.addEventListener('visibilitychange', () => {
     morphState = 'idle';
   }
 
-  openBtn.addEventListener('click', openAnim);
-  closeBtn.addEventListener('click', closeAnim);
+  function cancelAnim() {
+    animToken++;
+    morphState = 'idle';
+    clearRadiusTimer();
+    document.body.classList.remove('font-page-open');
+    unlockBodyScroll();
+    const el = morphLayer;
+    el.style.transition = 'opacity 120ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.style.display = 'none';
+      el.classList.remove('visible');
+    }, 140);
+  }
+
+  function interrupt() {
+    if (morphState === 'opening') {
+      const btnRect = openBtn.getBoundingClientRect();
+      const layerRect = morphLayer.getBoundingClientRect();
+      const notExpanded =
+        Math.abs(layerRect.width  - btnRect.width)  < 5 &&
+        Math.abs(layerRect.height - btnRect.height) < 5;
+      if (notExpanded) cancelAnim();
+      else closeAnim(true);
+    } else if (morphState === 'closing') {
+      openAnim();
+    }
+  }
+
+  openBtn.addEventListener('click', () => {
+    if (morphState === 'opening' || morphState === 'closing') interrupt();
+    else if (morphState === 'idle') openAnim();
+  });
+  closeBtn.addEventListener('click', () => {
+    if (morphState === 'open') closeAnim();
+    else if (morphState === 'opening') closeAnim(true);
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && morphState === 'open') closeAnim();
   });
+
+/* =========================================================
+   滑动返回手势（任意方向，未达阈值回弹）
+   ========================================================= */
+const GESTURE_THRESHOLD = 8;
+const GESTURE_COMPLETE_RATIO = 0.25;
+const GESTURE_VELOCITY_THRESHOLD = 0.45;
+const GESTURE_MAX_SCALE_DOWN = 0.85;
+const GESTURE_SCALE_DISTANCE = 260;
+
+let gestureState = null;
+
+function isInteractiveTarget(el) {
+  return el && el.closest && el.closest(
+    'mdui-button, mdui-button-icon, mdui-select, mdui-menu-item, button, input, select, .drag-resizer'
+  );
+}
+
+function clearGestureStyles() {
+  overlay.style.transition = '';
+  overlay.style.transform = '';
+  overlay.style.opacity = '';
+  overlay.style.borderRadius = '';
+  overlay.style.transformOrigin = '';
+  overlay.style.willChange = '';
+  overlay.classList.remove('gesturing');
+}
+
+function onGestureStart(e) {
+  if (morphState !== 'open') return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (isInteractiveTarget(e.target)) return;
+
+  gestureState = {
+    pointerId: e.pointerId,
+    active: false,
+    startX: e.clientX,
+    startY: e.clientY,
+    lastX: e.clientX,
+    lastY: e.clientY,
+    samples: [{ x: e.clientX, y: e.clientY, t: performance.now() }],
+  };
+}
+
+function onGestureMove(e) {
+  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
+
+  const dx = e.clientX - gestureState.startX;
+  const dy = e.clientY - gestureState.startY;
+
+  if (!gestureState.active) {
+    const dist = Math.hypot(dx, dy);
+    if (dist < GESTURE_THRESHOLD) return;
+    gestureState.active = true;
+    overlay.style.transition = 'none';
+    overlay.style.willChange = 'transform, opacity';
+    overlay.classList.add('gesturing');
+    try { overlay.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+
+  e.preventDefault();
+
+  const now = performance.now();
+  gestureState.samples.push({ x: e.clientX, y: e.clientY, t: now });
+  while (gestureState.samples.length > 1 && now - gestureState.samples[0].t > 100) {
+    gestureState.samples.shift();
+  }
+  gestureState.lastX = e.clientX;
+  gestureState.lastY = e.clientY;
+
+  const dist = Math.hypot(dx, dy);
+  const scale = 1 - Math.min(dist / GESTURE_SCALE_DISTANCE, 1) * (1 - GESTURE_MAX_SCALE_DOWN);
+  const maxDim = Math.max(window.innerWidth, window.innerHeight);
+  const opacity = 1 - Math.min(dist / (maxDim * 0.6), 1) * 0.5;
+  const radius = Math.min(dist / 10, 24);
+
+  overlay.style.transformOrigin = 'center center';
+  overlay.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+  overlay.style.opacity = String(opacity);
+  overlay.style.borderRadius = radius + 'px';
+}
+
+function onGestureEnd(e) {
+  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
+
+  const wasActive = gestureState.active;
+  if (!wasActive) { gestureState = null; return; }
+
+  const dx = gestureState.lastX - gestureState.startX;
+  const dy = gestureState.lastY - gestureState.startY;
+  const dist = Math.hypot(dx, dy);
+  const samples = gestureState.samples;
+  gestureState = null;
+
+  let vx = 0, vy = 0;
+  if (samples.length >= 2) {
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const dt = last.t - first.t;
+    if (dt > 0) { vx = (last.x - first.x) / dt; vy = (last.y - first.y) / dt; }
+  }
+  const speed = Math.hypot(vx, vy);
+  const minDim = Math.min(window.innerWidth, window.innerHeight);
+
+  const shouldComplete =
+    dist > minDim * GESTURE_COMPLETE_RATIO ||
+    speed > GESTURE_VELOCITY_THRESHOLD;
+
+  if (shouldComplete) completeGestureClose();
+  else rebounceGesture();
+}
+
+function rebounceGesture() {
+  overlay.style.transition =
+    'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 320ms cubic-bezier(0.22, 1, 0.36, 1)';
+  overlay.style.transform = 'translate(0, 0) scale(1)';
+  overlay.style.opacity = '1';
+  overlay.style.borderRadius = '0px';
+
+  setTimeout(() => {
+    clearGestureStyles();
+  }, 340);
+}
+
+/* 从松手位置变成按钮形状归位 */
+function completeGestureClose() {
+  const token = ++animToken;
+  morphState = 'closing';
+  clearRadiusTimer();
+  document.body.classList.remove('font-page-open');
+  unlockBodyScroll();
+
+  const pageRect = overlay.getBoundingClientRect();
+  const pageStyle = getComputedStyle(overlay);
+  const currentOpacity = parseFloat(pageStyle.opacity) || 1;
+  const currentRadius = parseFloat(pageStyle.borderRadius) || 0;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const startLeft = Math.max(-vw * 0.5, Math.min(vw, pageRect.left));
+  const startTop  = Math.max(-vh * 0.5, Math.min(vh, pageRect.top));
+  const startWidth  = Math.max(1, Math.min(vw * 2, pageRect.width));
+  const startHeight = Math.max(1, Math.min(vh * 2, pageRect.height));
+
+  overlay.classList.remove('content-in');
+  overlay.classList.remove('active');
+  overlay.classList.remove('gesturing');
+  overlay.setAttribute('aria-hidden', 'true');
+
+  const el = morphLayer;
+  const surface = getSurfaceColor();
+  const rect = openBtn.getBoundingClientRect();
+  const bg = getButtonColor();
+  const btnRadius = getButtonRadius(rect);
+
+  el.style.transition = 'none';
+  el.style.display = 'block';
+  el.style.background = surface;
+  el.style.opacity = String(currentOpacity);
+  el.style.left = startLeft + 'px';
+  el.style.top = startTop + 'px';
+  el.style.width = startWidth + 'px';
+  el.style.height = startHeight + 'px';
+  el.style.borderRadius = currentRadius + 'px';
+  void el.offsetWidth;
+
+  el.classList.add('visible');
+  el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
+    + `, background-color ${DURATION * 2}ms ${EASING}`;
+  requestAnimationFrame(() => {
+    if (token !== animToken) return;
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    el.style.width = rect.width + 'px';
+    el.style.height = rect.height + 'px';
+    el.style.borderRadius = btnRadius;
+    el.style.background = bg;
+    el.style.opacity = '1';
+  });
+
+  waitSize(el).then(() => {
+    if (token !== animToken) return;
+    return new Promise((r) => setTimeout(r, DURATION));
+  }).then(() => {
+    if (token !== animToken) return;
+    el.style.transition = 'opacity 150ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      if (token !== animToken) return;
+      el.style.display = 'none';
+      el.style.transition = '';
+      el.classList.remove('visible');
+      morphState = 'idle';
+      clearGestureStyles();
+    }, 160);
+  });
+}
+
+  overlay.addEventListener('pointerdown', onGestureStart);
+  overlay.addEventListener('pointermove', onGestureMove, { passive: false });
+  overlay.addEventListener('pointerup', onGestureEnd);
+  overlay.addEventListener('pointercancel', onGestureEnd);
 })();
 
 /* =========================================================
@@ -1496,17 +2191,18 @@ const focusCdView = document.getElementById('focusCdView');
 const focusPipClockView = document.getElementById('focusPipClockView');
 const focusPipCdView = document.getElementById('focusPipCdView');
 
-function renderFocus(snapshot, now) {
+function renderFocus(now) {
   const d = new Date(now);
   document.getElementById('focusClockTime').textContent =
     pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   document.getElementById('focusClockDate').textContent =
     d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
-    + ' ' + ['日','一','二','三','四','五','六'][d.getDay()];
+    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
 
-  const { target: exam, progress } = snapshot;
+  const exam = getActiveExam(now);
   const cdLabel = document.getElementById('focusCdLabel');
   const cdName = document.getElementById('focusCdName');
+  const cdA = document.getElementById('focusCdA');
   const cdB = document.getElementById('focusCdB');
   const cdC = document.getElementById('focusCdC');
   const cdD = document.getElementById('focusCdD');
@@ -1516,23 +2212,45 @@ function renderFocus(snapshot, now) {
     cdLabel.textContent = '倒计时';
     cdName.textContent = '暂无考试安排';
     cdName.className = 'focus-cd-name waiting';
-    cdB.textContent = '00'; cdC.textContent = '00'; cdD.textContent = '00';
+    cdA.textContent = '0'; cdB.textContent = '00';
+    cdC.textContent = '00'; cdD.textContent = '00';
     cdStatus.textContent = '请添加考试';
     cdStatus.className = 'focus-status';
-    [cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num');
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num');
+    setExamProgress('focusProgress', 'focusProgressText', null, now);
   } else {
-    const { phase, parts, label, status: statusText, urgent } = progress;
+    const phase = getPhase(exam.startMs, exam.endMs, now);
     cdName.textContent = exam.name;
     cdName.className = 'focus-cd-name ' + phase;
-    cdLabel.textContent = label;
-    cdB.textContent = pad(parts.hrs);
-    cdC.textContent = pad(parts.mins);
-    cdD.textContent = pad(parts.secs);
-    [cdB, cdC, cdD].forEach(e => {
-      e.className = 'focus-cd-num' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
-    });
-    cdStatus.textContent = statusText;
-    cdStatus.className = 'focus-status ' + phase;
+
+    if (phase === 'waiting') {
+      cdLabel.textContent = '距离考试开始';
+      const p = diffParts(exam.startMs - now);
+      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'focus-cd-num' + (urgent ? ' urgent' : ''); });
+      cdStatus.textContent = '倒计时中';
+      cdStatus.className = 'focus-status waiting';
+    } else if (phase === 'running') {
+      cdLabel.textContent = '距离考试结束';
+      const p = diffParts(exam.endMs - now);
+      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'focus-cd-num running' + (urgent ? ' urgent' : ''); });
+      cdStatus.textContent = '考试进行中，剩余时间';
+      cdStatus.className = 'focus-status running';
+    } else {
+      cdLabel.textContent = '考试已结束';
+      const p = diffParts(exam.endMs - exam.startMs);
+      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+      [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num ended');
+      cdStatus.textContent = '已结束';
+      cdStatus.className = 'focus-status ended';
+    }
+    setExamProgress('focusProgress', 'focusProgressText', exam, now);
   }
 
   const pipClockTime = document.getElementById('focusPipClockTime');
@@ -1553,13 +2271,79 @@ function renderFocus(snapshot, now) {
     pipCd.className = 'focus-pip-cd';
     pipStatus.textContent = '';
   } else {
-    const { phase, parts, urgent, status: statusText } = progress;
+    const phase = getPhase(exam.startMs, exam.endMs, now);
     pipLabel.textContent = '倒计时';
     pipName.textContent = exam.name;
     pipName.className = 'focus-pip-name ' + phase;
-    pipCd.textContent = pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs);
-    pipCd.className = 'focus-pip-cd' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
-    pipStatus.textContent = statusText;
+
+    if (phase === 'waiting') {
+      const p = diffParts(exam.startMs - now);
+      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      pipCd.className = 'focus-pip-cd' + (urgent ? ' urgent' : '');
+      pipStatus.textContent = '倒计时中';
+    } else if (phase === 'running') {
+      const p = diffParts(exam.endMs - now);
+      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      pipCd.className = 'focus-pip-cd running' + (urgent ? ' urgent' : '');
+      pipStatus.textContent = '剩余时间';
+    } else {
+      const p = diffParts(exam.endMs - exam.startMs);
+      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      pipCd.className = 'focus-pip-cd ended';
+      pipStatus.textContent = '已结束';
+    }
+  }
+
+  if (typeof updateFocusWidgets === 'function') updateFocusWidgets(now);
+}
+
+/* 依据当前考试上下文，返回当前科目 / 时间段 / 下一科目 */
+function getWidgetContext(now) {
+  const exams = getExams()
+    .map(ex => ({ ...ex, startMs: new Date(ex.start).getTime(), endMs: new Date(ex.end).getTime() }))
+    .sort((a, b) => a.startMs - b.startMs);
+  const current = getActiveExam(now);
+  let next = null;
+  if (current) {
+    next = exams.find(ex => ex.startMs > current.startMs) || null;
+  } else {
+    next = exams.find(ex => ex.startMs > now) || null;
+  }
+  return { exams, current, next };
+}
+
+/* 焦点大界面：按配置渲染小部件 */
+function updateFocusWidgets(now) {
+  const cfg = getWidgetConfig();
+  const { current, next } = getWidgetContext(now);
+  const d = new Date(now);
+
+  const elSub = document.getElementById('fwSubject');
+  const elRange = document.getElementById('fwRange');
+  const elNext = document.getElementById('fwNext');
+  const elClock = document.getElementById('fwClock');
+  if (!elSub || !elRange || !elNext || !elClock) return;
+
+  elSub.hidden = !cfg.subject;
+  elRange.hidden = !cfg.range;
+  elNext.hidden = !cfg.next;
+  elClock.hidden = !cfg.clock;
+
+  if (cfg.subject) elSub.textContent = current ? current.name : '暂无考试安排';
+  if (cfg.range) {
+    elRange.textContent = current
+      ? fmtDT(current.start) + ' — ' + fmtDT(current.end)
+      : '暂无考试时间段';
+  }
+  if (cfg.next) {
+    elNext.innerHTML = next
+      ? '下一科目：<b>' + escapeHtml(next.name) + '</b>（' + fmtDT(next.start) + '）'
+      : '暂无下一科目';
+  }
+  if (cfg.clock) {
+    elClock.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   }
 }
 
@@ -1571,26 +2355,22 @@ function updateFocusLayout() {
   focusPipCdView.style.display = isClockMain ? 'block' : 'none';
 }
 
-function renderCurrentFocus() {
-  const now = Date.now();
-  renderFocus(createExamSnapshot(now), now);
-}
-
 function enterFocus(mainView) {
   if (focusMode.active) {
     if (mainView !== focusMode.main) {
       focusMode.main = mainView;
       updateFocusLayout();
-      renderCurrentFocus();
+      renderFocus(Date.now());
     }
     return;
   }
   focusMode.active = true;
   focusMode.main = mainView;
   document.body.classList.add('focus-mode');
+  document.body.classList.add('quick-nav-hidden');
 
   updateFocusLayout();
-  renderCurrentFocus();
+  renderFocus(Date.now());
 
   focusOverlay.classList.add('active');
   focusOverlay.setAttribute('aria-hidden', 'false');
@@ -1603,6 +2383,7 @@ function exitFocus() {
   if (!focusMode.active) return;
   focusMode.active = false;
   document.body.classList.remove('focus-mode');
+  document.body.classList.remove('quick-nav-hidden');
   focusOverlay.classList.remove('active');
   focusOverlay.setAttribute('aria-hidden', 'true');
   focusPip.classList.remove('active');
@@ -1610,34 +2391,176 @@ function exitFocus() {
   focusHint.classList.remove('active');
 }
 
-document.getElementById('cdClock').addEventListener('click', () => enterFocus('clock'));
+document.getElementById('nowTime').addEventListener('click', () => enterFocus('clock'));
 document.getElementById('cdRow').addEventListener('click', () => enterFocus('countdown'));
 
 focusPip.addEventListener('click', () => {
   if (!focusMode.active) return;
-  focusMode.main = focusMode.main === 'clock' ? 'countdown' : 'clock';
-  updateFocusLayout();
-  renderCurrentFocus();
+  switchFocusMain(focusMode.main === 'clock' ? 'countdown' : 'clock');
 });
 
 focusClockView.addEventListener('click', () => {
   if (!focusMode.active) return;
-  focusMode.main = 'countdown';
-  updateFocusLayout();
-  renderCurrentFocus();
+  switchFocusMain('countdown');
 });
 focusCdView.addEventListener('click', () => {
   if (!focusMode.active) return;
-  focusMode.main = 'clock';
-  updateFocusLayout();
-  renderCurrentFocus();
+  switchFocusMain('clock');
 });
+
+/* 大部件切换：短暂缩放 + 淡入淡出（不改变排版，仅过渡动效） */
+const focusMainEl = document.getElementById('focusMain');
+let focusSwitchTimer = null;
+function switchFocusMain(next) {
+  if (!focusMode.active || next === focusMode.main) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  focusMode.main = next;
+  if (reduced) {
+    updateFocusLayout();
+    renderFocus(Date.now());
+    return;
+  }
+  clearTimeout(focusSwitchTimer);
+  focusMainEl.classList.remove('switching-in');
+  focusMainEl.classList.add('switching-out');
+  focusSwitchTimer = setTimeout(() => {
+    updateFocusLayout();
+    renderFocus(Date.now());
+    focusMainEl.classList.remove('switching-out');
+    focusMainEl.classList.add('switching-in');
+    focusSwitchTimer = setTimeout(() => {
+      focusMainEl.classList.remove('switching-in');
+    }, 280);
+  }, 200);
+}
 
 focusCloseBtn.addEventListener('click', exitFocus);
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && focusMode.active) exitFocus();
 });
+
+/* =========================================================
+   大时间界面小部件配置 + 设置页预览
+   ========================================================= */
+const WIDGET_KEY = 'focus_widgets_v1';
+const WIDGET_DEFAULT = { subject: true, range: true, next: true, clock: true };
+
+function getWidgetConfig() {
+  try {
+    const raw = localStorage.getItem(WIDGET_KEY);
+    if (!raw) return { ...WIDGET_DEFAULT };
+    const parsed = JSON.parse(raw);
+    const cfg = {};
+    Object.keys(WIDGET_DEFAULT).forEach(k => {
+      cfg[k] = typeof parsed[k] === 'boolean' ? parsed[k] : WIDGET_DEFAULT[k];
+    });
+    return cfg;
+  } catch { return { ...WIDGET_DEFAULT }; }
+}
+function saveWidgetConfig(cfg) {
+  localStorage.setItem(WIDGET_KEY, JSON.stringify(cfg));
+}
+
+/* 设置页预览：根据当前勾选渲染大时间界面缩略效果 */
+function updateWidgetPreview(now) {
+  const box = document.getElementById('widgetPreview');
+  if (!box) return;
+  const cfg = getWidgetConfig();
+  const { current, next } = getWidgetContext(now || Date.now());
+  const d = new Date(now || Date.now());
+  const parts = [];
+
+  if (cfg.clock) {
+    parts.push('<div class="wp-item wp-clock">' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + '</div>');
+  }
+  if (cfg.subject) {
+    parts.push('<div class="wp-item wp-subject">' +
+      escapeHtml(current ? current.name : '暂无考试安排') + '</div>');
+  }
+  if (cfg.range) {
+    parts.push('<div class="wp-item wp-range">' +
+      (current ? fmtDT(current.start) + ' — ' + fmtDT(current.end) : '暂无考试时间段') + '</div>');
+  }
+  if (cfg.next) {
+    parts.push('<div class="wp-item wp-next">' +
+      (next ? '下一科目：<b>' + escapeHtml(next.name) + '</b>（' + fmtDT(next.start) + '）' : '暂无下一科目') +
+      '</div>');
+  }
+  box.innerHTML = parts.length
+    ? parts.join('')
+    : '<div class="wp-empty">未启用任何部件，放大界面将只显示倒计时。</div>';
+}
+
+/* chips 勾选切换：使用 mdui 的 selectable chip + change 事件 */
+(function initWidgetChips() {
+  const chips = Array.from(document.querySelectorAll('#widgetChips mdui-chip'));
+  if (!chips.length) return;
+  const cfg = getWidgetConfig();
+  chips.forEach(chip => {
+    // 用 JS 属性设置选中态，确保与 localStorage 同步
+    chip.selected = !!cfg[chip.dataset.widget];
+    chip.addEventListener('change', () => {
+      const cur = getWidgetConfig();
+      cur[chip.dataset.widget] = !!chip.selected;
+      saveWidgetConfig(cur);
+      updateWidgetPreview(Date.now());
+      if (focusMode.active) updateFocusWidgets(Date.now());
+      mdui.snackbar({ message: (chip.selected ? '已启用：' : '已关闭：') + chip.textContent.trim() });
+    });
+  });
+  updateWidgetPreview(Date.now());
+})();
+
+/* =========================================================
+   设置页 / 底部应用栏导航（横向位移 + 淡入淡出）
+   单一状态驱动：所有动画交给 CSS transition，JS 不再用定时器
+   改 class，因此快速连点不会出现两个页面同时全透明。
+   ========================================================= */
+const settingsOverlay = document.getElementById('settingsPageOverlay');
+const dashboardPage = document.getElementById('dashboardPage');
+const planOverlay = document.getElementById('planPageOverlay');
+const navHomeBtn = document.getElementById('navHomeBtn');
+const navSettingsBtn = document.getElementById('navSettingsBtn');
+const playFab = document.getElementById('playFab');
+
+function isPlanOpen() { return planOverlay && planOverlay.classList.contains('active'); }
+function isSettingsOpen() { return document.body.classList.contains('view-settings'); }
+
+/* 唯一的视图切换入口：只有两个稳定状态，中间态由 CSS 自动插值 */
+function setView(view) {
+  const toSettings = view === 'settings';
+  document.body.classList.toggle('view-settings', toSettings);
+  if (settingsOverlay) settingsOverlay.setAttribute('aria-hidden', String(!toSettings));
+  if (navHomeBtn) navHomeBtn.classList.toggle('active', !toSettings);
+  if (navSettingsBtn) navSettingsBtn.classList.toggle('active', toSettings);
+  if (toSettings) {
+    if (isPlanOpen()) document.getElementById('planCloseBtn').click();
+    updateWidgetPreview(Date.now());
+  }
+}
+function openSettings() { setView('settings'); }
+function closeSettings() { setView('home'); }
+
+/* 底部应用栏按钮：首页 / 设置 */
+if (navHomeBtn) navHomeBtn.addEventListener('click', () => setView('home'));
+if (navSettingsBtn) navSettingsBtn.addEventListener('click', () => setView('settings'));
+/* 右下角 FAB：播放全域时间界面 */
+if (playFab) playFab.addEventListener('click', () => enterFocus('clock'));
+
+/* 主页"管理考试计划"按钮打开计划页时，回到首页视图 */
+const planOpenSync = document.getElementById('openPlanBtn');
+if (planOpenSync) planOpenSync.addEventListener('click', () => {
+  if (isSettingsOpen()) setView('home');
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isSettingsOpen()) setView('home');
+});
+
+/* 初始化高亮态 */
+setView('home');
 
 focusOverlay.addEventListener('click', (e) => {
   if (e.target === focusOverlay) exitFocus();
@@ -1647,9 +2570,6 @@ focusOverlay.addEventListener('click', (e) => {
    科目选择 & 自定义对话框【修复版】
    ========================================================= */
 const subjectSelect = document.getElementById('subjectSelect');
-const subjectPickerBtn = document.getElementById('subjectPickerBtn');
-const subjectDropdown = document.getElementById('subjectDropdown');
-const subjectGrid = document.getElementById('subjectGrid');
 const customDialog = document.getElementById('customSubjectDialog');
 const customSubjectInput = document.getElementById('customSubjectInput');
 const customSubjectCancel = document.getElementById('customSubjectCancel');
@@ -1657,43 +2577,8 @@ const customSubjectConfirm = document.getElementById('customSubjectConfirm');
 
 let lastSubjectValue = '语文';
 let pendingCustomSubject = null;
-let selectedSubject = '语文';
 
 subjectSelect.value = '语文';
-
-subjectPickerBtn.addEventListener('click', () => {
-  subjectGrid.querySelectorAll('.subject-grid-button').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.subject === selectedSubject);
-  });
-  subjectDropdown.classList.toggle('open');
-});
-
-subjectGrid.addEventListener('click', (e) => {
-  const btn = e.target.closest('.subject-grid-button');
-  if (!btn) return;
-  selectedSubject = btn.dataset.subject;
-  subjectSelect.value = selectedSubject;
-  lastSubjectValue = selectedSubject;
-  subjectPickerBtn.textContent = '科目：' + selectedSubject;
-  subjectDropdown.classList.remove('open');
-});
-
-document.getElementById('subjectGridCustom').addEventListener('click', () => {
-  subjectDropdown.classList.remove('open');
-  pendingCustomSubject = null;
-  customSubjectInput.value = '';
-  setTimeout(() => { customDialog.open = true; }, 80);
-});
-
-document.addEventListener('click', (e) => {
-  if (!subjectDropdown.classList.contains('open')) return;
-  if (e.target.closest('.subject-form-row')) return;
-  subjectDropdown.classList.remove('open');
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') subjectDropdown.classList.remove('open');
-});
 
 subjectSelect.addEventListener('change', (e) => {
   const val = e.target.value;
@@ -1714,8 +2599,6 @@ subjectSelect.addEventListener('change', (e) => {
 
 customDialog.addEventListener('closed', () => {
   if (pendingCustomSubject) {
-    selectedSubject = pendingCustomSubject;
-    subjectPickerBtn.textContent = '科目：' + pendingCustomSubject;
     let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
     if (!customItem) {
       customItem = document.createElement('mdui-menu-item');
@@ -1753,7 +2636,6 @@ customDialog.addEventListener('cancel', () => {
 });
 
 function getSelectedSubject() {
-  if (selectedSubject) return selectedSubject;
   const val = subjectSelect.value;
   if (val === '__custom_value__') {
     const item = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
@@ -1767,19 +2649,6 @@ function getSelectedSubject() {
 /* =========================================================
    添加/删除考试
    ========================================================= */
-['startInput', 'endInput'].forEach(id => {
-  const field = document.getElementById(id);
-  const wrapper = field.closest('.datetime-field-wrap');
-  const updatePlaceholder = () => wrapper.classList.toggle('has-value', Boolean(field.value));
-  wrapper.addEventListener('click', () => {
-    const input = field.shadowRoot?.querySelector('input[type="datetime-local"]');
-    if (input?.showPicker) input.showPicker();
-  });
-  field.addEventListener('input', updatePlaceholder);
-  field.addEventListener('change', updatePlaceholder);
-  updatePlaceholder();
-});
-
 document.getElementById('addBtn').addEventListener('click', () => {
   const startEl = document.getElementById('startInput');
   const endEl   = document.getElementById('endInput');
@@ -1802,15 +2671,75 @@ document.getElementById('addBtn').addEventListener('click', () => {
 
   startEl.value = '';
   endEl.value = '';
+  if (typeof updateQuickEndVisibility === 'function') updateQuickEndVisibility();
   render();
 });
+
+/* =========================================================
+   快捷结束时间：选择开始时间后自动展开 6 个时长 chip
+   ---------------------------------------------------------
+   - 开始时间有值 → 在开始时间行下方展开 chips 行
+   - 点击 chip → 开始时间 + 对应分钟数 → 写入结束时间
+   ========================================================= */
+(function initQuickEndChips() {
+  const startEl  = document.getElementById('startInput');
+  const endEl    = document.getElementById('endInput');
+  const quickRow = document.getElementById('quickEndRow');
+  const chips    = Array.from(document.querySelectorAll('#quickEndChips mdui-chip'));
+  if (!startEl || !endEl || !quickRow || !chips.length) return;
+
+  // datetime-local 需要本地时间字符串 YYYY-MM-DDTHH:mm（不能直接用 toISOString，那是 UTC）
+  function fmtLocalDT(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function clearChipSelection() {
+    chips.forEach(c => c.removeAttribute('selected'));
+  }
+
+  function updateQuickEndVisibility() {
+    const hasStart = !!startEl.value;
+    quickRow.classList.toggle('show', hasStart);
+    quickRow.setAttribute('aria-hidden', hasStart ? 'false' : 'true');
+    if (!hasStart) clearChipSelection();
+  }
+  // 暴露给添加考试后的清空逻辑调用（程序赋值不会触发 input 事件）
+  window.updateQuickEndVisibility = updateQuickEndVisibility;
+
+  ['input', 'change', 'clear'].forEach(evt => {
+    startEl.addEventListener(evt, updateQuickEndVisibility);
+  });
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const startVal = startEl.value;
+      if (!startVal) {
+        mdui.snackbar({ message: '请先选择开始时间' });
+        return;
+      }
+      const start = new Date(startVal);
+      if (isNaN(start.getTime())) return;
+
+      const mins = Number(chip.getAttribute('data-minutes'));
+      const end = new Date(start.getTime() + mins * 60000);
+      endEl.value = fmtLocalDT(end);
+
+      clearChipSelection();
+      chip.setAttribute('selected', '');
+      mdui.snackbar({ message: '结束时间已设为 ' + fmtDT(fmtLocalDT(end)) + '（+' + mins + 'min）' });
+    });
+  });
+
+  updateQuickEndVisibility();
+})();
 
 document.getElementById('examList').addEventListener('click', (e) => {
   const delBtn = e.target.closest('.del-btn');
   if (!delBtn) return;
   const id = delBtn.dataset.id;
   if (!id) return;
-  saveExams(getExams().filter(x => String(x.id) !== id));
+  saveExams(getExams().filter(x => x.id !== id));
   render();
 });
 
@@ -1908,8 +2837,6 @@ customDialog.removeEventListener('closed', function(){});
 customDialog.addEventListener('closed', () => {
   // 原有逻辑：临时自定义科目
   if (pendingCustomSubject) {
-    selectedSubject = pendingCustomSubject;
-    subjectPickerBtn.textContent = '科目：' + pendingCustomSubject;
     let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
     if (!customItem) {
       customItem = document.createElement('mdui-menu-item');
@@ -1959,9 +2886,6 @@ function loadPersistSubjectOnBoot() {
 }
 loadPersistSubjectOnBoot();
 
-
-
-
 /* =========================================================
    定时更新
    ========================================================= */
@@ -1969,42 +2893,8 @@ setInterval(() => {
   updateClock();
   render();
 }, 1000);
-function initClockFace() {
-  const ticks = document.getElementById('clockTicks');
-  if (!ticks) return;
-  for (let i = 0; i < 60; i++) {
-    const angle = i * 6 * Math.PI / 180;
-    const major = i % 5 === 0;
-    const outer = 174;
-    const inner = major ? 153 : 166;
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', 200 + Math.sin(angle) * inner);
-    line.setAttribute('y1', 200 - Math.cos(angle) * inner);
-    line.setAttribute('x2', 200 + Math.sin(angle) * outer);
-    line.setAttribute('y2', 200 - Math.cos(angle) * outer);
-    line.setAttribute('class', 'clock-tick' + (major ? ' major' : ''));
-    ticks.appendChild(line);
-  }
-  const numbers = document.getElementById('clockNumbers');
-  for (let n = 1; n <= 12; n++) {
-    const angle = n * 30 * Math.PI / 180;
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', 200 + Math.sin(angle) * 132);
-    text.setAttribute('y', 200 - Math.cos(angle) * 132);
-    text.setAttribute('class', 'clock-number');
-    text.textContent = n;
-    numbers.appendChild(text);
-  }
-}
-initClockFace();
 updateClock();
 render();
-scheduleCountdownRender();
-function animateClock() {
-  updateClock();
-  requestAnimationFrame(animateClock);
-}
-animateClock();
 
 if (window.customElements && customElements.whenDefined) {
   Promise.allSettled([
