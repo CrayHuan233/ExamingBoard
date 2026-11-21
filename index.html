@@ -1235,7 +1235,7 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
       </section>
 
       <section class="card" aria-labelledby="widgetSettingsTitle">
-        <h2 class="list-title setting-title" id="widgetSettingsTitle"><mdui-icon name="widgets"></mdui-icon>大时间界面小部件</h2>
+        <h2 class="list-title setting-title" id="widgetSettingsTitle"><mdui-icon name="widgets"></mdui-icon>时间界面小部件</h2>
         <p class="settings-desc">勾选要在放大界面中显示的内容，下方为实时预览。</p>
         <div class="widget-chips" id="widgetChips">
           <mdui-chip selectable filter data-widget="subject" selected>当前科目</mdui-chip>
@@ -1256,7 +1256,7 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
   <div slot="description" style="width:min(320px,70vw);display:flex;flex-direction:column;gap:12px;">
     <mdui-text-field id="customSubjectInput" label="科目名称" variant="outlined" placeholder="如……还能有什么别的科目吗" clearable></mdui-text-field>
     <mdui-checkbox id="persistSubjectCheck" selected>持久化保存该自定义科目，下次仍然可选</mdui-checkbox>
-    <mdui-select id="delCustomSubjectSelect" variant="outlined" label="管理已保存自定义科目"  placeholder="添加的科目找不到则说明它未持久化保存"></mdui-select>
+    <mdui-select id="delCustomSubjectSelect" variant="outlined" label="管理已保存自定义科目"  placeholder="添加的科目找不到则说明它未被持久化保存"></mdui-select>
   </div>
   <mdui-button slot="action" variant="text" id="customSubjectCancel">取消</mdui-button>
   <mdui-button slot="action" variant="tonal" id="customSubjectConfirm">确定</mdui-button>
