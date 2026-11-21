@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no">
 <meta name="renderer" content="webkit">
-<title>多门考试倒计时时钟</title>
+<title>考试看板</title>
 <link rel="icon" type="image/svg+xml" href="https://fonts.gstatic.com/s/i/materialicons/schedule/v12/24px.svg">
 <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -19,6 +19,30 @@
   font-display: swap;
 }
 
+:root {
+  --exam-background: #D2EFEE;
+  --exam-card: #F7FDFC;
+  --exam-accent: #036C6D;
+  --exam-urgent: #C0282E;
+  --exam-ended: #916B3D;
+}
+html.mdui-theme-dark {
+  --exam-background: #163D3E;
+  --exam-card: #214849;
+  --exam-accent: #D2EFEE;
+  --exam-urgent: #FF9A9F;
+  --exam-ended: #C9A26B;
+}
+@media (prefers-color-scheme: dark) {
+  html.mdui-theme-auto {
+    --exam-background: #163D3E;
+    --exam-card: #214849;
+    --exam-accent: #D2EFEE;
+    --exam-urgent: #FF9A9F;
+    --exam-ended: #C9A26B;
+  }
+}
+
 /* ========== 基础重置 ========== */
 * { box-sizing: border-box; }
 html, body {
@@ -28,13 +52,13 @@ html, body {
 }
 body {
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: rgb(var(--mdui-color-surface-container-low));
+  background: var(--exam-background);
   color: rgb(var(--mdui-color-on-surface));
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: safe center;
   min-height: 100vh;
-  padding: 84px 16px 80px;
+  padding: 80px 16px 0;
   overflow-y: auto;
 }
 body.font-page-open { overflow: hidden; }
@@ -45,6 +69,30 @@ body.focus-mode { overflow: hidden; }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 900;
+  height: 64px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  color: #036C6D;
+}
+.app-top-bar mdui-top-app-bar-title {
+  color: #036C6D;
+  height: 29px;
+  font-size: 19px;
+  line-height: 29px;
+  align-self: center;
+}
+.app-top-bar .brand {
+  height: 29px;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.app-top-bar .brand-logo,
+.app-top-bar mdui-top-app-bar-title {
+  position: relative;
+  top: 0;
 }
 .top-bar-actions {
   display: flex;
@@ -52,11 +100,20 @@ body.focus-mode { overflow: hidden; }
   gap: 2px;
   margin-right: 6px;
 }
+.brand-logo {
+  width: auto;
+  height: 29px;
+  object-fit: contain;
+  margin-left: 12px;
+  margin-right: 8px;
+  border-radius: 6px;
+  align-self: center;
+}
 
 /* ========== 主页面布局 ========== */
 .app {
   width: 100%;
-  max-width: 520px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 .page { display: none; }
@@ -64,13 +121,14 @@ body.focus-mode { overflow: hidden; }
 
 /* ========== 卡片 ========== */
 .card {
-  background: rgb(var(--mdui-color-surface-container));
+  background: var(--exam-card);
   border-radius: 24px;
-  padding: 26px 24px 22px;
+  padding: 18px 24px 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.04);
   margin-bottom: 18px;
   position: relative;
 }
+#dashboardPage .card { margin-bottom: 0; }
 .title {
   font-size: 14px;
   letter-spacing: 3px;
@@ -106,6 +164,46 @@ body.focus-mode { overflow: hidden; }
   margin-top: 2px;
   margin-bottom: 22px;
 }
+.round-clock-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 16px;
+  cursor: pointer;
+}
+.round-clock {
+  width: min(330px, 78vw);
+  aspect-ratio: 1;
+  display: block;
+  border-radius: 50%;
+  background: var(--exam-card);
+  filter: drop-shadow(0 8px 14px rgba(15, 23, 42, .10));
+}
+.clock-face-border { fill: var(--exam-card); stroke: #333333; stroke-width: 5; }
+html.mdui-theme-dark .clock-face-border { stroke: #d6d8dc; }
+.clock-tick { stroke: #555555; stroke-width: 1.2; stroke-linecap: round; }
+.clock-tick.major { stroke: #333333; stroke-width: 1.8; }
+html.mdui-theme-dark .clock-tick { stroke: #aab1bb; }
+html.mdui-theme-dark .clock-tick.major { stroke: #d6d8dc; }
+.clock-number {
+  fill: #333333;
+  font-size: 31px;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+html.mdui-theme-dark .clock-number { fill: #dfe3e8; }
+.clock-date {
+  fill: rgb(var(--mdui-color-on-surface-variant));
+  font-size: 16px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.clock-hour { stroke: #000000; stroke-width: 7; stroke-linecap: round; }
+.clock-minute { stroke: #000000; stroke-width: 5; stroke-linecap: round; }
+.clock-second { stroke: #C0282E; stroke-width: 2; stroke-linecap: round; }
+html.mdui-theme-dark .clock-hour { stroke: #edf0f3; }
+html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
+.clock-pin-outer { fill: var(--exam-card); stroke: #C0282E; stroke-width: 2; }
 .divider {
   height: 1px;
   background: rgb(var(--mdui-color-outline-variant));
@@ -129,8 +227,8 @@ body.focus-mode { overflow: hidden; }
   transition: color .2s;
 }
 .main-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.main-name.running { color: #059669; }
-.main-name.ended   { color: #b45309; }
+.main-name.running { color: rgb(var(--mdui-color-primary)); }
+.main-name.ended   { color: var(--exam-ended); }
 
 .cd-row {
   display: flex;
@@ -158,9 +256,9 @@ body.focus-mode { overflow: hidden; }
   line-height: 1.1;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.cd-num.urgent  { color: #dc2626; }
-.cd-num.running { color: #059669; }
-.cd-num.ended   { color: #b45309; }
+.cd-num.urgent  { color: var(--exam-urgent); }
+.cd-num.running { color: rgb(var(--mdui-color-primary)); }
+.cd-num.ended   { color: var(--exam-ended); }
 .cd-text {
   font-size: 12px;
   color: rgb(var(--mdui-color-on-surface-variant));
@@ -173,8 +271,8 @@ body.focus-mode { overflow: hidden; }
   margin-top: 6px;
 }
 .status.waiting { color: rgb(var(--mdui-color-primary)); }
-.status.running { color: #059669; }
-.status.ended   { color: #b45309; }
+.status.running { color: rgb(var(--mdui-color-primary)); }
+.status.ended   { color: var(--exam-ended); }
 
 /* ========== 按钮（使用 MDUI 默认圆角与高度） ========== */
 .btn-primary {
@@ -204,6 +302,91 @@ body.focus-mode { overflow: hidden; }
 }
 .form-row mdui-select { flex: 1; width: 100%; }
 .form-row mdui-text-field { flex: 1; }
+.datetime-field-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.datetime-field-wrap mdui-text-field { width: 100%; }
+.datetime-field-wrap:not(.has-value) mdui-text-field::part(input) {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.datetime-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: rgb(var(--mdui-color-on-surface-variant));
+  opacity: .62;
+  font-size: 16px;
+  line-height: 1;
+  width: calc(100% - 48px);
+  padding-right: 8px;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.datetime-field-wrap.has-value .datetime-placeholder { display: none; }
+.subject-form-row {
+  position: relative;
+  z-index: 10;
+}
+.subject-picker {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+.subject-picker::part(label) { color: rgb(var(--mdui-color-on-surface)); }
+.subject-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  z-index: 10000;
+  display: none;
+  padding: 8px;
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  border-radius: 16px;
+  background: rgb(var(--mdui-color-surface-container-high));
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+.subject-dropdown.open { display: block; }
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+.subject-grid-button {
+  min-height: 44px;
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  border-radius: 12px;
+  background: rgb(var(--mdui-color-surface-container));
+  color: rgb(var(--mdui-color-on-surface));
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .12s, background .12s, border-color .12s;
+}
+.subject-grid-button:hover {
+  background: rgb(var(--mdui-color-surface-container-high));
+  border-color: rgb(var(--mdui-color-primary));
+}
+.subject-grid-button:active { transform: scale(.96); }
+.subject-grid-button.selected {
+  color: rgb(var(--mdui-color-on-primary));
+  background: rgb(var(--mdui-color-primary));
+  border-color: rgb(var(--mdui-color-primary));
+}
+.subject-grid-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
 
 .list-title {
   font-size: 16px;
@@ -257,9 +440,9 @@ body.focus-mode { overflow: hidden; }
   min-width: 110px;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.exam-cd.urgent  { color: #dc2626; }
-.exam-cd.running { color: #059669; }
-.exam-cd.ended   { color: #b45309; }
+.exam-cd.urgent  { color: var(--exam-urgent); }
+.exam-cd.running { color: rgb(var(--mdui-color-primary)); }
+.exam-cd.ended   { color: var(--exam-ended); }
 .del-btn {
   flex: 0 0 auto;
 }
@@ -293,12 +476,13 @@ body.focus-mode { overflow: hidden; }
 .plan-page-content {
   position: absolute;
   inset: 0;
-  overflow: hidden;               /* 锁定内部滚动：内容不允许滚动，不超出界面 */
-  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   opacity: 0;
-  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
   padding: 20px 16px 80px;
 }
 .plan-page-overlay.content-in .plan-page-content { opacity: 1; }
@@ -310,8 +494,6 @@ body.focus-mode { overflow: hidden; }
   display: flex;
   flex-direction: column;
   gap: 16px;
-  flex: 1 1 auto;
-  min-height: 0;
 }
 
 /* ========== 焦点模式（点击放大） ========== */
@@ -319,18 +501,18 @@ body.focus-mode { overflow: hidden; }
   position: fixed;
   inset: 0;
   z-index: 999989;
-  background: rgb(var(--mdui-color-surface-container-low));
+  background: var(--exam-background);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 360ms cubic-bezier(0.22, 1, 0.36, 1),
-              visibility 0s linear 360ms;
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0s linear 220ms;
 }
 .focus-overlay.active {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1),
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
               visibility 0s linear 0s;
 }
 
@@ -378,8 +560,8 @@ body.focus-mode { overflow: hidden; }
   color: rgb(var(--mdui-color-primary));
 }
 .focus-cd-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.focus-cd-name.running { color: #059669; }
-.focus-cd-name.ended   { color: #b45309; }
+.focus-cd-name.running { color: rgb(var(--mdui-color-primary)); }
+.focus-cd-name.ended   { color: var(--exam-ended); }
 .focus-cd-row {
   display: flex;
   justify-content: center;
@@ -401,9 +583,9 @@ body.focus-mode { overflow: hidden; }
   line-height: 1.1;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.focus-cd-num.urgent  { color: #dc2626; }
-.focus-cd-num.running { color: #059669; }
-.focus-cd-num.ended   { color: #b45309; }
+.focus-cd-num.urgent  { color: var(--exam-urgent); }
+.focus-cd-num.running { color: rgb(var(--mdui-color-primary)); }
+.focus-cd-num.ended   { color: var(--exam-ended); }
 .focus-cd-text {
   font-size: clamp(11px, 1.6vw, 15px);
   color: rgb(var(--mdui-color-on-surface-variant));
@@ -415,8 +597,8 @@ body.focus-mode { overflow: hidden; }
   color: rgb(var(--mdui-color-on-surface-variant));
 }
 .focus-status.waiting { color: rgb(var(--mdui-color-primary)); }
-.focus-status.running { color: #059669; }
-.focus-status.ended   { color: #b45309; }
+.focus-status.running { color: rgb(var(--mdui-color-primary)); }
+.focus-status.ended   { color: var(--exam-ended); }
 
 /* 右上角小挂件 */
 .focus-pip {
@@ -424,13 +606,13 @@ body.focus-mode { overflow: hidden; }
   top: 20px;
   right: 20px;
   z-index: 999994;
-  background: rgb(var(--mdui-color-surface-container));
+  background: var(--exam-card);
   border-radius: 16px;
   padding: 12px 16px;
   box-shadow: 0 6px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
   cursor: pointer;
-  transition: transform .2s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow .2s;
+  transition: transform .12s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow .12s;
   user-select: none;
   max-width: 220px;
   opacity: 0;
@@ -478,8 +660,8 @@ body.focus-mode { overflow: hidden; }
   margin-bottom: 2px;
 }
 .focus-pip-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
-.focus-pip-name.running { color: #059669; }
-.focus-pip-name.ended   { color: #b45309; }
+.focus-pip-name.running { color: rgb(var(--mdui-color-primary)); }
+.focus-pip-name.ended   { color: var(--exam-ended); }
 .focus-pip-cd {
   font-size: 15px;
   font-weight: 400;
@@ -488,9 +670,9 @@ body.focus-mode { overflow: hidden; }
   white-space: nowrap;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.focus-pip-cd.urgent  { color: #dc2626; }
-.focus-pip-cd.running { color: #059669; }
-.focus-pip-cd.ended   { color: #b45309; }
+.focus-pip-cd.urgent  { color: var(--exam-urgent); }
+.focus-pip-cd.running { color: rgb(var(--mdui-color-primary)); }
+.focus-pip-cd.ended   { color: var(--exam-ended); }
 .focus-pip-status {
   font-size: 11px;
   color: rgb(var(--mdui-color-on-surface-variant));
@@ -507,14 +689,14 @@ body.focus-mode { overflow: hidden; }
   transform: scale(.85);
   visibility: hidden;
   pointer-events: none;
-  transition: opacity .25s, transform .25s, visibility 0s linear .25s;
+  transition: opacity .12s, transform .12s, visibility 0s linear .12s;
 }
 .focus-overlay.active ~ .focus-close.active {
   opacity: 1;
   transform: scale(1);
   visibility: visible;
   pointer-events: auto;
-  transition: opacity .25s .15s, transform .25s .15s, visibility 0s linear 0s;
+  transition: opacity .12s .06s, transform .12s .06s, visibility 0s linear 0s;
 }
 
 /* 提示文字 */
@@ -533,18 +715,92 @@ body.focus-mode { overflow: hidden; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity .25s, visibility 0s linear .25s;
+  transition: opacity .12s, visibility 0s linear .12s;
   white-space: nowrap;
 }
 .focus-overlay.active ~ .focus-hint.active {
   opacity: .85;
   visibility: visible;
-  transition: opacity .25s .3s, visibility 0s linear 0s;
+  transition: opacity .12s .08s, visibility 0s linear 0s;
+}
+
+@media (min-width: 700px) {
+  .app {
+    max-width: 1120px;
+  }
+  #dashboardPage .card {
+    width: 100%;
+    min-height: 520px;
+    margin-bottom: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    column-gap: 24px;
+    align-content: center;
+    padding: 28px 36px;
+  }
+  #dashboardPage .round-clock-wrap {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    align-self: center;
+    margin: 0;
+  }
+  #dashboardPage .round-clock {
+    width: min(100%, 460px);
+  }
+  #dashboardPage .divider {
+    display: none;
+  }
+  #dashboardPage .main-label {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    font-size: 16px;
+  }
+  #dashboardPage .main-name {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 8px 0 18px;
+    font-size: 28px;
+    min-height: 38px;
+  }
+  #dashboardPage .cd-row {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0;
+  }
+  #dashboardPage .cd-unit {
+    max-width: 150px;
+    min-width: 0;
+    padding: 16px 8px 12px;
+  }
+  #dashboardPage .cd-num {
+    font-size: clamp(26px, 4vw, 44px);
+  }
+  #dashboardPage .status {
+    grid-column: 2;
+    grid-row: 4;
+    display: block;
+    min-height: 18px;
+    margin-top: 14px;
+    font-size: 15px;
+  }
 }
 
 @media (max-width: 480px) {
-  body { padding: 76px 12px 80px; }
+  body { padding: 76px 12px 0; }
   .card { padding: 22px 18px 18px; }
+  .app-top-bar .brand { height: 17px; }
+  .app-top-bar .brand-logo {
+    height: 12px;
+    margin-left: 4px;
+    margin-right: 2px;
+  }
+  .app-top-bar mdui-top-app-bar-title {
+    height: 17px;
+    font-size: 11px;
+    line-height: 17px;
+  }
   .cd-row { gap: 6px; }
   .cd-unit { min-width: 0; padding: 10px 4px 8px; }
   .cd-num { font-size: 26px; }
@@ -565,23 +821,6 @@ body.focus-mode { overflow: hidden; }
     animation: none !important;
   }
 }
-
-
-/* ========== 焦点大部件切换动效（不改变排版，仅过渡） ========== */
-.focus-main { transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1), transform 220ms cubic-bezier(0.22, 1, 0.36, 1); }
-.focus-main.switching-out { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
-.focus-main.switching-in { animation: focusMainPop 260ms cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes focusMainPop {
-  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.94); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .focus-main { transition-duration: .01ms !important; }
-  .focus-main.switching-in { animation: none !important; }
-}
-
-/* 手势拖动期间隐藏 plan-page 滚动条视觉反馈 */
-.plan-page-overlay.gesturing .plan-page-content { overflow: hidden; }
 
 /* ========== 修复：自定义科目Dialog浮在plan-page-overlay上层 ========== */
 #customSubjectDialog {
@@ -608,33 +847,44 @@ body.focus-mode { overflow: hidden; }
 
 <!-- ==================== 顶栏 ==================== -->
 <mdui-top-app-bar class="app-top-bar" variant="small" scroll-behavior="shrink elevate">
-  <mdui-button-icon icon="schedule" disabled style="opacity:.85"></mdui-button-icon>
-  <mdui-top-app-bar-title>考试倒计时</mdui-top-app-bar-title>
+  <div class="brand">
+    <img class="brand-logo" src="https://chn.picui.cn/8997/2026/11/21/6b01561562035.png" alt="考试看板标识">
+    <mdui-top-app-bar-title>| 考试看板</mdui-top-app-bar-title>
+  </div>
   <div style="flex-grow: 1"></div>
   <div class="top-bar-actions">
+    <mdui-button-icon id="openPlanBtn" icon="settings" title="编辑考试计划"></mdui-button-icon>
     <mdui-button-icon id="themeToggleBtn" icon="dark_mode" title="切换深浅色"></mdui-button-icon>
   </div>
 </mdui-top-app-bar>
 
 <div class="app">
-  <br><br>
   <!-- ==================== 主页（倒计时） ==================== -->
   <main id="dashboardPage" class="page active">
     <div class="card">
-      <div class="title">考试倒计时时钟</div>
-      <div class="now-time" id="nowTime" title="点击放大">--:--:--</div>
-      <div class="now-date" id="nowDate">----/--/--</div>
+      <div class="round-clock-wrap" id="cdClock" title="点击放大">
+        <svg class="round-clock" id="roundClock" viewBox="0 0 400 400" role="img" aria-label="圆形实时时钟">
+          <circle class="clock-face-border" cx="200" cy="200" r="186"></circle>
+          <g id="clockTicks"></g>
+          <g id="clockNumbers"></g>
+          <text class="clock-date" id="clockDate" x="200" y="256">2026.11.21 六</text>
+          <g id="clockHands">
+            <line class="clock-hour" id="hourHand" x1="200" y1="200" x2="200" y2="118"></line>
+            <line class="clock-minute" id="minuteHand" x1="200" y1="200" x2="200" y2="78"></line>
+            <line class="clock-second" id="secondHand" x1="200" y1="218" x2="200" y2="58"></line>
+            <circle class="clock-pin-outer" cx="200" cy="200" r="7"></circle>
+          </g>
+        </svg>
+      </div>
       <div class="divider"></div>
       <div class="main-label" id="mainLabel">当前状态</div>
       <div class="main-name waiting" id="mainName">暂无考试安排</div>
       <div class="cd-row" id="cdRow" title="点击放大">
-        <div class="cd-unit"><div class="cd-num" id="cdA">0</div><div class="cd-text" id="cdAT">天</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
       </div>
       <div class="status" id="status">请添加考试</div>
-      <mdui-button id="openPlanBtn" variant="filled" class="btn-primary" icon="edit_calendar">管理考试计划</mdui-button>
     </div>
   </main>
 </div>
@@ -650,7 +900,6 @@ body.focus-mode { overflow: hidden; }
       <div class="focus-cd-label" id="focusCdLabel">距离考试开始</div>
       <div class="focus-cd-name" id="focusCdName">--</div>
       <div class="focus-cd-row">
-        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdA">0</div><div class="focus-cd-text" id="focusCdAT">天</div></div>
         <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdB">00</div><div class="focus-cd-text" id="focusCdBT">时</div></div>
         <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdC">00</div><div class="focus-cd-text" id="focusCdCT">分</div></div>
         <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdD">00</div><div class="focus-cd-text" id="focusCdDT">秒</div></div>
@@ -688,8 +937,25 @@ body.focus-mode { overflow: hidden; }
 
       <section class="card" aria-labelledby="addTitle">
         <h2 class="list-title" id="addTitle">添加考试</h2>
-        <div class="form-row">
-          <mdui-select id="subjectSelect" variant="outlined" label="科目">
+        <div class="form-row subject-form-row">
+          <mdui-button id="subjectPickerBtn" class="subject-picker" variant="outlined" icon="school">科目：语文</mdui-button>
+          <div class="subject-dropdown" id="subjectDropdown">
+            <div class="subject-grid" id="subjectGrid">
+              <button class="subject-grid-button selected" type="button" data-subject="语文">语</button>
+              <button class="subject-grid-button" type="button" data-subject="数学">数</button>
+              <button class="subject-grid-button" type="button" data-subject="英语">英</button>
+              <button class="subject-grid-button" type="button" data-subject="物理">物</button>
+              <button class="subject-grid-button" type="button" data-subject="化学">化</button>
+              <button class="subject-grid-button" type="button" data-subject="生物">生</button>
+              <button class="subject-grid-button" type="button" data-subject="政治">政</button>
+              <button class="subject-grid-button" type="button" data-subject="历史">史</button>
+              <button class="subject-grid-button" type="button" data-subject="地理">地</button>
+            </div>
+            <div class="subject-grid-actions">
+              <mdui-button id="subjectGridCustom" variant="text">自定义科目</mdui-button>
+            </div>
+          </div>
+          <mdui-select id="subjectSelect" variant="outlined" label="科目" style="display:none" aria-hidden="true">
             <mdui-menu-item value="语文">语文</mdui-menu-item>
             <mdui-menu-item value="数学">数学</mdui-menu-item>
             <mdui-menu-item value="英语">英语</mdui-menu-item>
@@ -702,8 +968,8 @@ body.focus-mode { overflow: hidden; }
             <mdui-menu-item value="__custom__">自定义…</mdui-menu-item>
           </mdui-select>
         </div>
-        <div class="form-row"><mdui-text-field id="startInput" label="开始时间" variant="outlined" type="datetime-local" clearable></mdui-text-field></div>
-        <div class="form-row"><mdui-text-field id="endInput" label="结束时间" variant="outlined" type="datetime-local" clearable></mdui-text-field></div>
+        <div class="form-row"><div class="datetime-field-wrap"><mdui-text-field id="startInput" label="考试开始时间" variant="outlined" type="datetime-local" clearable></mdui-text-field><span class="datetime-placeholder" aria-hidden="true">请选择考试开始时间</span></div></div>
+        <div class="form-row"><div class="datetime-field-wrap"><mdui-text-field id="endInput" label="考试截止时间" variant="outlined" type="datetime-local" clearable></mdui-text-field><span class="datetime-placeholder" aria-hidden="true">请选择考试截止时间</span></div></div>
         <mdui-button id="addBtn" variant="filled" class="btn-primary" icon="add">添加考试</mdui-button>
       </section>
 
@@ -735,7 +1001,7 @@ body.focus-mode { overflow: hidden; }
    ========================================================= */
 (function() {
   if (window.mdui && typeof mdui.setColorScheme === 'function') {
-    mdui.setColorScheme('#006463');
+    mdui.setColorScheme('#036C6D');
   }
 })();
 
@@ -793,7 +1059,10 @@ const KEY = 'exam_schedule_v2';
 function pad(n) { return String(n).padStart(2, '0'); }
 
 function getExams() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+  try {
+    const stored = JSON.parse(localStorage.getItem(KEY));
+    return Array.isArray(stored) ? stored : [];
+  }
   catch { return []; }
 }
 function saveExams(list) {
@@ -819,22 +1088,74 @@ function getPhase(startMs, endMs, now) {
 }
 
 function diffParts(absDiff) {
-  let d = Math.max(0, absDiff);
-  const days = Math.floor(d / 86400000); d -= days * 86400000;
+  let d = Math.max(0, Number.isFinite(absDiff) ? absDiff : 0);
   const hrs  = Math.floor(d / 3600000);  d -= hrs  * 3600000;
   const mins = Math.floor(d / 60000);    d -= mins * 60000;
   const secs = Math.floor(d / 1000);
-  return { days, hrs, mins, secs };
+  return { hrs, mins, secs };
 }
 
-function getActiveExam(now) {
-  const exams = getExams()
-    .map(ex => ({ ...ex, startMs: new Date(ex.start).getTime(), endMs: new Date(ex.end).getTime() }))
-    .sort((a, b) => a.startMs - b.startMs);
-  for (const ex of exams) {
-    if (getPhase(ex.startMs, ex.endMs, now) !== 'ended') return ex;
+function getExamProgress(exam, now) {
+  const phase = getPhase(exam.startMs, exam.endMs, now);
+  if (phase === 'waiting') {
+    const parts = diffParts(exam.startMs - now);
+    return {
+      phase,
+      parts,
+      label: '距离考试开始',
+      status: '倒计时中',
+      urgent: parts.hrs === 0 && parts.mins < 30,
+    };
   }
-  return null;
+  if (phase === 'running') {
+    return {
+      phase,
+      parts: diffParts(now - exam.startMs),
+      label: '考试进行中',
+      status: '已开始，计时中',
+      urgent: false,
+    };
+  }
+  return {
+    phase,
+    parts: diffParts(exam.endMs - exam.startMs),
+    label: '考试已结束',
+    status: '已结束',
+    urgent: false,
+  };
+}
+
+function createExamSnapshot(now) {
+  const exams = getExams()
+    .filter(ex => ex && typeof ex === 'object')
+    .map(ex => ({
+      ...ex,
+      id: ex.id === undefined || ex.id === null ? '' : String(ex.id),
+      startMs: new Date(ex.start).getTime(),
+      endMs: new Date(ex.end).getTime(),
+    }))
+    .filter(ex => ex.id.length > 0
+      && typeof ex.name === 'string'
+      && ex.name.trim().length > 0
+      && typeof ex.start === 'string'
+      && typeof ex.end === 'string'
+      && Number.isFinite(ex.startMs)
+      && Number.isFinite(ex.endMs)
+      && ex.endMs > ex.startMs)
+    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
+
+  const running = exams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'running');
+  const upcoming = exams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'waiting');
+  const mostRecentlyEnded = exams
+    .filter(ex => getPhase(ex.startMs, ex.endMs, now) === 'ended')
+    .sort((a, b) => b.endMs - a.endMs)[0];
+  const target = running || upcoming || mostRecentlyEnded || null;
+
+  return {
+    exams,
+    target,
+    progress: target ? getExamProgress(target, now) : null,
+  };
 }
 
 /* =========================================================
@@ -842,110 +1163,82 @@ function getActiveExam(now) {
    ========================================================= */
 function updateClock() {
   const now = new Date();
-  const nowTimeEl = document.getElementById('nowTime');
-  const nowDateEl = document.getElementById('nowDate');
-  if (nowTimeEl) nowTimeEl.textContent =
-    pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-  if (nowDateEl) nowDateEl.textContent =
+  const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+  const minutes = now.getMinutes() + seconds / 60;
+  const hours = (now.getHours() % 12) + minutes / 60;
+
+  const hourHand = document.getElementById('hourHand');
+  const minuteHand = document.getElementById('minuteHand');
+  const secondHand = document.getElementById('secondHand');
+  const clockDate = document.getElementById('clockDate');
+  if (hourHand) hourHand.setAttribute('transform', 'rotate(' + (hours * 30) + ' 200 200)');
+  if (minuteHand) minuteHand.setAttribute('transform', 'rotate(' + (minutes * 6) + ' 200 200)');
+  if (secondHand) secondHand.setAttribute('transform', 'rotate(' + (seconds * 6) + ' 200 200)');
+  if (clockDate) clockDate.textContent =
     now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate())
-    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
+    + ' ' + ['日','一','二','三','四','五','六'][now.getDay()];
 }
 
-function renderMain(exams, now) {
+function renderMain(snapshot) {
   const mainName  = document.getElementById('mainName');
   const mainLabel = document.getElementById('mainLabel');
   const status    = document.getElementById('status');
-  const cdA = document.getElementById('cdA');
   const cdB = document.getElementById('cdB');
   const cdC = document.getElementById('cdC');
   const cdD = document.getElementById('cdD');
-  const cdAT = document.getElementById('cdAT');
   const cdBT = document.getElementById('cdBT');
   const cdCT = document.getElementById('cdCT');
   const cdDT = document.getElementById('cdDT');
   if (!mainName) return;
 
-  let target = null;
-  for (const ex of exams) {
-    if (getPhase(ex.startMs, ex.endMs, now) !== 'ended') { target = ex; break; }
-  }
-
-  if (!target) {
+  if (!snapshot.target) {
     mainName.textContent = '暂无考试安排';
     mainName.className = 'main-name waiting';
     mainLabel.textContent = '当前状态';
     status.textContent = '请添加考试';
     status.className = 'status';
-    cdA.textContent = '0'; cdB.textContent = '00';
-    cdC.textContent = '00'; cdD.textContent = '00';
-    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdB.textContent = '00'; cdC.textContent = '00'; cdD.textContent = '00';
+    cdBT.textContent = '时';
     cdCT.textContent = '分'; cdDT.textContent = '秒';
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num');
+    [cdB, cdC, cdD].forEach(e => e.className = 'cd-num');
     return;
   }
 
-  const phase = getPhase(target.startMs, target.endMs, now);
+  const { target, progress } = snapshot;
+  const { phase, parts, label, status: statusText, urgent } = progress;
   mainName.textContent = target.name;
   mainName.className = 'main-name ' + phase;
-
-  if (phase === 'waiting') {
-    mainLabel.textContent = '距离考试开始';
-    const p = diffParts(target.startMs - now);
-    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdAT.textContent = '天'; cdBT.textContent = '时';
-    cdCT.textContent = '分'; cdDT.textContent = '秒';
-    const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
-    [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'cd-num' + (urgent ? ' urgent' : ''); });
-    status.textContent = '倒计时中';
-    status.className = 'status waiting';
-  } else if (phase === 'running') {
-    mainLabel.textContent = '考试进行中';
-    const p = diffParts(now - target.startMs);
-    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdAT.textContent = '天'; cdBT.textContent = '时';
-    cdCT.textContent = '分'; cdDT.textContent = '秒';
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num running');
-    status.textContent = '已开始，计时中';
-    status.className = 'status running';
-  } else {
-    mainLabel.textContent = '考试已结束';
-    const p = diffParts(target.endMs - target.startMs);
-    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdAT.textContent = '天'; cdBT.textContent = '时';
-    cdCT.textContent = '分'; cdDT.textContent = '秒';
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num ended');
-    status.textContent = '已结束';
-    status.className = 'status ended';
-  }
+  mainLabel.textContent = label;
+  status.textContent = statusText;
+  status.className = 'status ' + phase;
+  cdB.textContent = pad(parts.hrs);
+  cdC.textContent = pad(parts.mins);
+  cdD.textContent = pad(parts.secs);
+  cdBT.textContent = '时';
+  cdCT.textContent = '分';
+  cdDT.textContent = '秒';
+  [cdB, cdC, cdD].forEach(e => {
+    e.className = 'cd-num' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
+  });
 }
 
-function renderList(exams, now) {
+function renderList(snapshot, now) {
   const container = document.getElementById('examList');
   if (!container) return;
-  if (exams.length === 0) {
+  if (snapshot.exams.length === 0) {
     container.innerHTML = '<div class="empty">暂无考试</div>';
     return;
   }
-  container.innerHTML = exams.map(ex => {
-    const phase = getPhase(ex.startMs, ex.endMs, now);
-    let cdText = '';
-    let cdCls = '';
-    if (phase === 'waiting') {
-      const p = diffParts(ex.startMs - now);
-      cdText = '剩 ' + (p.days > 0 ? p.days + '天 ' : '') + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
-      cdCls = p.days === 0 && p.hrs === 0 && p.mins < 30 ? 'urgent' : '';
-    } else if (phase === 'running') {
-      const p = diffParts(now - ex.startMs);
-      cdText = '已考 ' + (p.days > 0 ? p.days + '天 ' : '') + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
-      cdCls = 'running';
-    } else {
-      cdText = '已结束';
-      cdCls = 'ended';
-    }
-    return `<div class="exam-item ${phase === 'waiting' ? 'active' : ''}">
+  container.innerHTML = snapshot.exams.map(ex => {
+    const { phase, parts, urgent } = getExamProgress(ex, now);
+    const cdText = phase === 'waiting'
+      ? '剩 ' + pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs)
+      : phase === 'running'
+        ? '已考 ' + pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs)
+        : '已结束';
+    const cdCls = phase === 'waiting' ? (urgent ? 'urgent' : '') : phase;
+    const activeClass = snapshot.target && ex.id === snapshot.target.id ? 'active' : '';
+    return `<div class="exam-item ${activeClass}">
       <div class="exam-info">
         <div class="exam-name">${escapeHtml(ex.name)}</div>
         <div class="exam-time">${fmtDT(ex.start)} — ${fmtDT(ex.end)}</div>
@@ -958,16 +1251,33 @@ function renderList(exams, now) {
 
 function render() {
   const now = Date.now();
-  const exams = getExams()
-    .map(ex => ({ ...ex, startMs: new Date(ex.start).getTime(), endMs: new Date(ex.end).getTime() }))
-    .sort((a, b) => a.startMs - b.startMs);
-  renderMain(exams, now);
-  renderList(exams, now);
-  if (focusMode.active) renderFocus(now);
+  const snapshot = createExamSnapshot(now);
+  renderMain(snapshot);
+  renderList(snapshot, now);
+  if (focusMode.active) renderFocus(snapshot, now);
 }
 
+let countdownRenderTimer = null;
+function scheduleCountdownRender() {
+  clearTimeout(countdownRenderTimer);
+  if (document.hidden) return;
+  countdownRenderTimer = setTimeout(() => {
+    render();
+    scheduleCountdownRender();
+  }, 1000 - (Date.now() % 1000));
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearTimeout(countdownRenderTimer);
+    return;
+  }
+  render();
+  scheduleCountdownRender();
+});
+
 /* =========================================================
-   一镜到底：计划管理页（可中断 + 任意方向滑动返回）
+   一镜到底：计划管理页
    ========================================================= */
 (function initMorph() {
   const openBtn = document.getElementById('openPlanBtn');
@@ -979,33 +1289,18 @@ function render() {
   if (!openBtn || !overlay) return;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const DURATION = prefersReducedMotion ? 0 : 650;
-  const RADIUS_TAIL = prefersReducedMotion ? 0 : 260;
-  const RADIUS_DELAY = prefersReducedMotion ? 0 : 120;
-  const RADIUS_HOLD = prefersReducedMotion ? 0 : 48;
-  const RADIUS_LEAD = prefersReducedMotion ? 0 : 80;
-  const RIPPLE_WAIT = prefersReducedMotion ? 0 : 100;
-  const FADE = prefersReducedMotion ? 0 : 80;
+  const DURATION = prefersReducedMotion ? 0 : 380;
+  const RADIUS_TAIL = prefersReducedMotion ? 0 : 150;
+  const RADIUS_DELAY = prefersReducedMotion ? 0 : 40;
+  const RADIUS_HOLD = prefersReducedMotion ? 0 : 24;
+  const RADIUS_LEAD = prefersReducedMotion ? 0 : 45;
+  const FADE = prefersReducedMotion ? 0 : 40;
   const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
-  const FALLBACK_COLOR = '#006463';
+  const FALLBACK_COLOR = '#036C6D';
 
   let morphState = 'idle';
   let animToken = 0;
   let radiusTimer = null;
-
-  /* 滚动锁定：防止计划页滑动穿透到底层 */
-  let savedHtmlOverflow = '';
-  let savedBodyOverflow = '';
-  function lockBodyScroll() {
-    savedHtmlOverflow = document.documentElement.style.overflow;
-    savedBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-  }
-  function unlockBodyScroll() {
-    document.documentElement.style.overflow = savedHtmlOverflow;
-    document.body.style.overflow = savedBodyOverflow;
-  }
 
   function getButtonColor() {
     const cs = getComputedStyle(openBtn);
@@ -1046,12 +1341,6 @@ function render() {
   function radiusTransition(delay) { return `border-radius ${RADIUS_TAIL}ms ${EASING} ${delay}ms`; }
   function clearRadiusTimer() { if (radiusTimer) { clearTimeout(radiusTimer); radiusTimer = null; } }
 
-  function currentMorphRect() {
-    const r = morphLayer.getBoundingClientRect();
-    const radius = parseFloat(getComputedStyle(morphLayer).borderRadius) || 0;
-    return { left: r.left, top: r.top, width: r.width, height: r.height, radius: radius + 'px' };
-  }
-
   function waitSize(el) {
     return new Promise((resolve) => {
       if (DURATION === 0) { resolve(); return; }
@@ -1064,10 +1353,10 @@ function render() {
   }
 
   async function openAnim() {
+    if (morphState !== 'idle') return;
     const token = ++animToken;
     morphState = 'opening';
     clearRadiusTimer();
-    clearGestureStyles();
 
     const rect = openBtn.getBoundingClientRect();
     const bg = getButtonColor();
@@ -1082,7 +1371,7 @@ function render() {
     setRect(el, rect, radius);
     void el.offsetWidth;
 
-    await new Promise((r) => setTimeout(r, RIPPLE_WAIT));
+    await new Promise((r) => setTimeout(r, prefersReducedMotion ? 0 : 40));
     if (token !== animToken) return;
 
     el.classList.add('visible');
@@ -1113,28 +1402,26 @@ function render() {
 
     morphState = 'open';
     document.body.classList.add('font-page-open');
-    lockBodyScroll();
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => { if (token === animToken) overlay.classList.add('content-in'); });
 
-    el.style.transition = 'opacity 280ms ease';
+    el.style.transition = 'opacity 120ms ease';
     el.style.opacity = '0';
     setTimeout(() => {
       if (token !== animToken) return;
       el.style.display = 'none';
       el.classList.remove('visible');
-    }, 300);
+    }, 140);
   }
 
-  async function closeAnim(fromInterrupt = false) {
+  async function closeAnim() {
+    if (morphState !== 'open') return;
     const token = ++animToken;
     morphState = 'closing';
     clearRadiusTimer();
-    document.body.classList.remove('font-page-open');
-    unlockBodyScroll();
-    clearGestureStyles();
 
+    document.body.classList.remove('font-page-open');
     overlay.classList.remove('content-in');
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
@@ -1147,25 +1434,18 @@ function render() {
 
     el.style.transition = 'none';
     el.style.display = 'block';
+    el.style.background = surface;
     el.style.opacity = '1';
-
-    if (fromInterrupt) {
-      const cur = currentMorphRect();
-      el.style.background = getComputedStyle(el).backgroundColor;
-      setRect(el, cur, cur.radius);
-    } else {
-      el.style.background = surface;
-      el.style.left = '0px';
-      el.style.top = '0px';
-      el.style.width = window.innerWidth + 'px';
-      el.style.height = window.innerHeight + 'px';
-      el.style.borderRadius = '0px';
-    }
+    el.style.left = '0px';
+    el.style.top = '0px';
+    el.style.width = window.innerWidth + 'px';
+    el.style.height = window.innerHeight + 'px';
+    el.style.borderRadius = '0px';
     void el.offsetWidth;
 
     el.classList.add('visible');
     el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
-      + `, background-color ${DURATION * 2}ms ${EASING}`;
+      + `, background-color ${DURATION}ms ${EASING}`;
     requestAnimationFrame(() => {
       if (token !== animToken) return;
       el.style.left = rect.left + 'px';
@@ -1179,12 +1459,9 @@ function render() {
     await waitSize(el);
     if (token !== animToken) return;
 
-    await new Promise((r) => setTimeout(r, DURATION));
-    if (token !== animToken) return;
-
-    el.style.transition = 'opacity 180ms ease';
+    el.style.transition = 'opacity 100ms ease';
     el.style.opacity = '0';
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 110));
     if (token !== animToken) return;
 
     el.style.display = 'none';
@@ -1193,249 +1470,12 @@ function render() {
     morphState = 'idle';
   }
 
-  function cancelAnim() {
-    animToken++;
-    morphState = 'idle';
-    clearRadiusTimer();
-    document.body.classList.remove('font-page-open');
-    unlockBodyScroll();
-    const el = morphLayer;
-    el.style.transition = 'opacity 120ms ease';
-    el.style.opacity = '0';
-    setTimeout(() => {
-      el.style.display = 'none';
-      el.classList.remove('visible');
-    }, 140);
-  }
-
-  function interrupt() {
-    if (morphState === 'opening') {
-      const btnRect = openBtn.getBoundingClientRect();
-      const layerRect = morphLayer.getBoundingClientRect();
-      const notExpanded =
-        Math.abs(layerRect.width  - btnRect.width)  < 5 &&
-        Math.abs(layerRect.height - btnRect.height) < 5;
-      if (notExpanded) cancelAnim();
-      else closeAnim(true);
-    } else if (morphState === 'closing') {
-      openAnim();
-    }
-  }
-
-  openBtn.addEventListener('click', () => {
-    if (morphState === 'opening' || morphState === 'closing') interrupt();
-    else if (morphState === 'idle') openAnim();
-  });
-  closeBtn.addEventListener('click', () => {
-    if (morphState === 'open') closeAnim();
-    else if (morphState === 'opening') closeAnim(true);
-  });
+  openBtn.addEventListener('click', openAnim);
+  closeBtn.addEventListener('click', closeAnim);
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && morphState === 'open') closeAnim();
   });
-
-/* =========================================================
-   滑动返回手势（任意方向，未达阈值回弹）
-   ========================================================= */
-const GESTURE_THRESHOLD = 8;
-const GESTURE_COMPLETE_RATIO = 0.25;
-const GESTURE_VELOCITY_THRESHOLD = 0.45;
-const GESTURE_MAX_SCALE_DOWN = 0.85;
-const GESTURE_SCALE_DISTANCE = 260;
-
-let gestureState = null;
-
-function isInteractiveTarget(el) {
-  return el && el.closest && el.closest(
-    'mdui-button, mdui-button-icon, mdui-select, mdui-menu-item, button, input, select, .drag-resizer'
-  );
-}
-
-function clearGestureStyles() {
-  overlay.style.transition = '';
-  overlay.style.transform = '';
-  overlay.style.opacity = '';
-  overlay.style.borderRadius = '';
-  overlay.style.transformOrigin = '';
-  overlay.style.willChange = '';
-  overlay.classList.remove('gesturing');
-}
-
-function onGestureStart(e) {
-  if (morphState !== 'open') return;
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
-  if (isInteractiveTarget(e.target)) return;
-
-  gestureState = {
-    pointerId: e.pointerId,
-    active: false,
-    startX: e.clientX,
-    startY: e.clientY,
-    lastX: e.clientX,
-    lastY: e.clientY,
-    samples: [{ x: e.clientX, y: e.clientY, t: performance.now() }],
-  };
-}
-
-function onGestureMove(e) {
-  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
-
-  const dx = e.clientX - gestureState.startX;
-  const dy = e.clientY - gestureState.startY;
-
-  if (!gestureState.active) {
-    const dist = Math.hypot(dx, dy);
-    if (dist < GESTURE_THRESHOLD) return;
-    gestureState.active = true;
-    overlay.style.transition = 'none';
-    overlay.style.willChange = 'transform, opacity';
-    overlay.classList.add('gesturing');
-    try { overlay.setPointerCapture(e.pointerId); } catch (_) {}
-  }
-
-  e.preventDefault();
-
-  const now = performance.now();
-  gestureState.samples.push({ x: e.clientX, y: e.clientY, t: now });
-  while (gestureState.samples.length > 1 && now - gestureState.samples[0].t > 100) {
-    gestureState.samples.shift();
-  }
-  gestureState.lastX = e.clientX;
-  gestureState.lastY = e.clientY;
-
-  const dist = Math.hypot(dx, dy);
-  const scale = 1 - Math.min(dist / GESTURE_SCALE_DISTANCE, 1) * (1 - GESTURE_MAX_SCALE_DOWN);
-  const maxDim = Math.max(window.innerWidth, window.innerHeight);
-  const opacity = 1 - Math.min(dist / (maxDim * 0.6), 1) * 0.5;
-  const radius = Math.min(dist / 10, 24);
-
-  overlay.style.transformOrigin = 'center center';
-  overlay.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
-  overlay.style.opacity = String(opacity);
-  overlay.style.borderRadius = radius + 'px';
-}
-
-function onGestureEnd(e) {
-  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
-
-  const wasActive = gestureState.active;
-  if (!wasActive) { gestureState = null; return; }
-
-  const dx = gestureState.lastX - gestureState.startX;
-  const dy = gestureState.lastY - gestureState.startY;
-  const dist = Math.hypot(dx, dy);
-  const samples = gestureState.samples;
-  gestureState = null;
-
-  let vx = 0, vy = 0;
-  if (samples.length >= 2) {
-    const first = samples[0];
-    const last = samples[samples.length - 1];
-    const dt = last.t - first.t;
-    if (dt > 0) { vx = (last.x - first.x) / dt; vy = (last.y - first.y) / dt; }
-  }
-  const speed = Math.hypot(vx, vy);
-  const minDim = Math.min(window.innerWidth, window.innerHeight);
-
-  const shouldComplete =
-    dist > minDim * GESTURE_COMPLETE_RATIO ||
-    speed > GESTURE_VELOCITY_THRESHOLD;
-
-  if (shouldComplete) completeGestureClose();
-  else rebounceGesture();
-}
-
-function rebounceGesture() {
-  overlay.style.transition =
-    'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 320ms cubic-bezier(0.22, 1, 0.36, 1)';
-  overlay.style.transform = 'translate(0, 0) scale(1)';
-  overlay.style.opacity = '1';
-  overlay.style.borderRadius = '0px';
-
-  setTimeout(() => {
-    clearGestureStyles();
-  }, 340);
-}
-
-/* 从松手位置变成按钮形状归位 */
-function completeGestureClose() {
-  const token = ++animToken;
-  morphState = 'closing';
-  clearRadiusTimer();
-  document.body.classList.remove('font-page-open');
-  unlockBodyScroll();
-
-  const pageRect = overlay.getBoundingClientRect();
-  const pageStyle = getComputedStyle(overlay);
-  const currentOpacity = parseFloat(pageStyle.opacity) || 1;
-  const currentRadius = parseFloat(pageStyle.borderRadius) || 0;
-
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const startLeft = Math.max(-vw * 0.5, Math.min(vw, pageRect.left));
-  const startTop  = Math.max(-vh * 0.5, Math.min(vh, pageRect.top));
-  const startWidth  = Math.max(1, Math.min(vw * 2, pageRect.width));
-  const startHeight = Math.max(1, Math.min(vh * 2, pageRect.height));
-
-  overlay.classList.remove('content-in');
-  overlay.classList.remove('active');
-  overlay.classList.remove('gesturing');
-  overlay.setAttribute('aria-hidden', 'true');
-
-  const el = morphLayer;
-  const surface = getSurfaceColor();
-  const rect = openBtn.getBoundingClientRect();
-  const bg = getButtonColor();
-  const btnRadius = getButtonRadius(rect);
-
-  el.style.transition = 'none';
-  el.style.display = 'block';
-  el.style.background = surface;
-  el.style.opacity = String(currentOpacity);
-  el.style.left = startLeft + 'px';
-  el.style.top = startTop + 'px';
-  el.style.width = startWidth + 'px';
-  el.style.height = startHeight + 'px';
-  el.style.borderRadius = currentRadius + 'px';
-  void el.offsetWidth;
-
-  el.classList.add('visible');
-  el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
-    + `, background-color ${DURATION * 2}ms ${EASING}`;
-  requestAnimationFrame(() => {
-    if (token !== animToken) return;
-    el.style.left = rect.left + 'px';
-    el.style.top = rect.top + 'px';
-    el.style.width = rect.width + 'px';
-    el.style.height = rect.height + 'px';
-    el.style.borderRadius = btnRadius;
-    el.style.background = bg;
-    el.style.opacity = '1';
-  });
-
-  waitSize(el).then(() => {
-    if (token !== animToken) return;
-    return new Promise((r) => setTimeout(r, DURATION));
-  }).then(() => {
-    if (token !== animToken) return;
-    el.style.transition = 'opacity 150ms ease';
-    el.style.opacity = '0';
-    setTimeout(() => {
-      if (token !== animToken) return;
-      el.style.display = 'none';
-      el.style.transition = '';
-      el.classList.remove('visible');
-      morphState = 'idle';
-      clearGestureStyles();
-    }, 160);
-  });
-}
-
-  overlay.addEventListener('pointerdown', onGestureStart);
-  overlay.addEventListener('pointermove', onGestureMove, { passive: false });
-  overlay.addEventListener('pointerup', onGestureEnd);
-  overlay.addEventListener('pointercancel', onGestureEnd);
 })();
 
 /* =========================================================
@@ -1456,18 +1496,17 @@ const focusCdView = document.getElementById('focusCdView');
 const focusPipClockView = document.getElementById('focusPipClockView');
 const focusPipCdView = document.getElementById('focusPipCdView');
 
-function renderFocus(now) {
+function renderFocus(snapshot, now) {
   const d = new Date(now);
   document.getElementById('focusClockTime').textContent =
     pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   document.getElementById('focusClockDate').textContent =
     d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
-    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    + ' ' + ['日','一','二','三','四','五','六'][d.getDay()];
 
-  const exam = getActiveExam(now);
+  const { target: exam, progress } = snapshot;
   const cdLabel = document.getElementById('focusCdLabel');
   const cdName = document.getElementById('focusCdName');
-  const cdA = document.getElementById('focusCdA');
   const cdB = document.getElementById('focusCdB');
   const cdC = document.getElementById('focusCdC');
   const cdD = document.getElementById('focusCdD');
@@ -1477,42 +1516,23 @@ function renderFocus(now) {
     cdLabel.textContent = '倒计时';
     cdName.textContent = '暂无考试安排';
     cdName.className = 'focus-cd-name waiting';
-    cdA.textContent = '0'; cdB.textContent = '00';
-    cdC.textContent = '00'; cdD.textContent = '00';
+    cdB.textContent = '00'; cdC.textContent = '00'; cdD.textContent = '00';
     cdStatus.textContent = '请添加考试';
     cdStatus.className = 'focus-status';
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num');
+    [cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num');
   } else {
-    const phase = getPhase(exam.startMs, exam.endMs, now);
+    const { phase, parts, label, status: statusText, urgent } = progress;
     cdName.textContent = exam.name;
     cdName.className = 'focus-cd-name ' + phase;
-
-    if (phase === 'waiting') {
-      cdLabel.textContent = '距离考试开始';
-      const p = diffParts(exam.startMs - now);
-      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
-      [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'focus-cd-num' + (urgent ? ' urgent' : ''); });
-      cdStatus.textContent = '倒计时中';
-      cdStatus.className = 'focus-status waiting';
-    } else if (phase === 'running') {
-      cdLabel.textContent = '考试进行中';
-      const p = diffParts(now - exam.startMs);
-      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-      [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num running');
-      cdStatus.textContent = '已开始，计时中';
-      cdStatus.className = 'focus-status running';
-    } else {
-      cdLabel.textContent = '考试已结束';
-      const p = diffParts(exam.endMs - exam.startMs);
-      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-      [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num ended');
-      cdStatus.textContent = '已结束';
-      cdStatus.className = 'focus-status ended';
-    }
+    cdLabel.textContent = label;
+    cdB.textContent = pad(parts.hrs);
+    cdC.textContent = pad(parts.mins);
+    cdD.textContent = pad(parts.secs);
+    [cdB, cdC, cdD].forEach(e => {
+      e.className = 'focus-cd-num' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
+    });
+    cdStatus.textContent = statusText;
+    cdStatus.className = 'focus-status ' + phase;
   }
 
   const pipClockTime = document.getElementById('focusPipClockTime');
@@ -1533,28 +1553,13 @@ function renderFocus(now) {
     pipCd.className = 'focus-pip-cd';
     pipStatus.textContent = '';
   } else {
-    const phase = getPhase(exam.startMs, exam.endMs, now);
+    const { phase, parts, urgent, status: statusText } = progress;
     pipLabel.textContent = '倒计时';
     pipName.textContent = exam.name;
     pipName.className = 'focus-pip-name ' + phase;
-
-    if (phase === 'waiting') {
-      const p = diffParts(exam.startMs - now);
-      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
-      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
-      pipCd.className = 'focus-pip-cd' + (urgent ? ' urgent' : '');
-      pipStatus.textContent = '倒计时中';
-    } else if (phase === 'running') {
-      const p = diffParts(now - exam.startMs);
-      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
-      pipCd.className = 'focus-pip-cd running';
-      pipStatus.textContent = '进行中';
-    } else {
-      const p = diffParts(exam.endMs - exam.startMs);
-      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
-      pipCd.className = 'focus-pip-cd ended';
-      pipStatus.textContent = '已结束';
-    }
+    pipCd.textContent = pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs);
+    pipCd.className = 'focus-pip-cd' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
+    pipStatus.textContent = statusText;
   }
 }
 
@@ -1566,12 +1571,17 @@ function updateFocusLayout() {
   focusPipCdView.style.display = isClockMain ? 'block' : 'none';
 }
 
+function renderCurrentFocus() {
+  const now = Date.now();
+  renderFocus(createExamSnapshot(now), now);
+}
+
 function enterFocus(mainView) {
   if (focusMode.active) {
     if (mainView !== focusMode.main) {
       focusMode.main = mainView;
       updateFocusLayout();
-      renderFocus(Date.now());
+      renderCurrentFocus();
     }
     return;
   }
@@ -1580,7 +1590,7 @@ function enterFocus(mainView) {
   document.body.classList.add('focus-mode');
 
   updateFocusLayout();
-  renderFocus(Date.now());
+  renderCurrentFocus();
 
   focusOverlay.classList.add('active');
   focusOverlay.setAttribute('aria-hidden', 'false');
@@ -1600,48 +1610,28 @@ function exitFocus() {
   focusHint.classList.remove('active');
 }
 
-document.getElementById('nowTime').addEventListener('click', () => enterFocus('clock'));
+document.getElementById('cdClock').addEventListener('click', () => enterFocus('clock'));
 document.getElementById('cdRow').addEventListener('click', () => enterFocus('countdown'));
 
 focusPip.addEventListener('click', () => {
   if (!focusMode.active) return;
-  switchFocusMain(focusMode.main === 'clock' ? 'countdown' : 'clock');
+  focusMode.main = focusMode.main === 'clock' ? 'countdown' : 'clock';
+  updateFocusLayout();
+  renderCurrentFocus();
 });
 
 focusClockView.addEventListener('click', () => {
   if (!focusMode.active) return;
-  switchFocusMain('countdown');
+  focusMode.main = 'countdown';
+  updateFocusLayout();
+  renderCurrentFocus();
 });
 focusCdView.addEventListener('click', () => {
   if (!focusMode.active) return;
-  switchFocusMain('clock');
+  focusMode.main = 'clock';
+  updateFocusLayout();
+  renderCurrentFocus();
 });
-
-/* 大部件切换：短暂缩放 + 淡入淡出（不改变排版，仅过渡动效） */
-const focusMainEl = document.getElementById('focusMain');
-let focusSwitchTimer = null;
-function switchFocusMain(next) {
-  if (!focusMode.active || next === focusMode.main) return;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  focusMode.main = next;
-  if (reduced) {
-    updateFocusLayout();
-    renderFocus(Date.now());
-    return;
-  }
-  clearTimeout(focusSwitchTimer);
-  focusMainEl.classList.remove('switching-in');
-  focusMainEl.classList.add('switching-out');
-  focusSwitchTimer = setTimeout(() => {
-    updateFocusLayout();
-    renderFocus(Date.now());
-    focusMainEl.classList.remove('switching-out');
-    focusMainEl.classList.add('switching-in');
-    focusSwitchTimer = setTimeout(() => {
-      focusMainEl.classList.remove('switching-in');
-    }, 280);
-  }, 200);
-}
 
 focusCloseBtn.addEventListener('click', exitFocus);
 
@@ -1657,6 +1647,9 @@ focusOverlay.addEventListener('click', (e) => {
    科目选择 & 自定义对话框【修复版】
    ========================================================= */
 const subjectSelect = document.getElementById('subjectSelect');
+const subjectPickerBtn = document.getElementById('subjectPickerBtn');
+const subjectDropdown = document.getElementById('subjectDropdown');
+const subjectGrid = document.getElementById('subjectGrid');
 const customDialog = document.getElementById('customSubjectDialog');
 const customSubjectInput = document.getElementById('customSubjectInput');
 const customSubjectCancel = document.getElementById('customSubjectCancel');
@@ -1664,8 +1657,43 @@ const customSubjectConfirm = document.getElementById('customSubjectConfirm');
 
 let lastSubjectValue = '语文';
 let pendingCustomSubject = null;
+let selectedSubject = '语文';
 
 subjectSelect.value = '语文';
+
+subjectPickerBtn.addEventListener('click', () => {
+  subjectGrid.querySelectorAll('.subject-grid-button').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.subject === selectedSubject);
+  });
+  subjectDropdown.classList.toggle('open');
+});
+
+subjectGrid.addEventListener('click', (e) => {
+  const btn = e.target.closest('.subject-grid-button');
+  if (!btn) return;
+  selectedSubject = btn.dataset.subject;
+  subjectSelect.value = selectedSubject;
+  lastSubjectValue = selectedSubject;
+  subjectPickerBtn.textContent = '科目：' + selectedSubject;
+  subjectDropdown.classList.remove('open');
+});
+
+document.getElementById('subjectGridCustom').addEventListener('click', () => {
+  subjectDropdown.classList.remove('open');
+  pendingCustomSubject = null;
+  customSubjectInput.value = '';
+  setTimeout(() => { customDialog.open = true; }, 80);
+});
+
+document.addEventListener('click', (e) => {
+  if (!subjectDropdown.classList.contains('open')) return;
+  if (e.target.closest('.subject-form-row')) return;
+  subjectDropdown.classList.remove('open');
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') subjectDropdown.classList.remove('open');
+});
 
 subjectSelect.addEventListener('change', (e) => {
   const val = e.target.value;
@@ -1686,6 +1714,8 @@ subjectSelect.addEventListener('change', (e) => {
 
 customDialog.addEventListener('closed', () => {
   if (pendingCustomSubject) {
+    selectedSubject = pendingCustomSubject;
+    subjectPickerBtn.textContent = '科目：' + pendingCustomSubject;
     let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
     if (!customItem) {
       customItem = document.createElement('mdui-menu-item');
@@ -1723,6 +1753,7 @@ customDialog.addEventListener('cancel', () => {
 });
 
 function getSelectedSubject() {
+  if (selectedSubject) return selectedSubject;
   const val = subjectSelect.value;
   if (val === '__custom_value__') {
     const item = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
@@ -1736,6 +1767,19 @@ function getSelectedSubject() {
 /* =========================================================
    添加/删除考试
    ========================================================= */
+['startInput', 'endInput'].forEach(id => {
+  const field = document.getElementById(id);
+  const wrapper = field.closest('.datetime-field-wrap');
+  const updatePlaceholder = () => wrapper.classList.toggle('has-value', Boolean(field.value));
+  wrapper.addEventListener('click', () => {
+    const input = field.shadowRoot?.querySelector('input[type="datetime-local"]');
+    if (input?.showPicker) input.showPicker();
+  });
+  field.addEventListener('input', updatePlaceholder);
+  field.addEventListener('change', updatePlaceholder);
+  updatePlaceholder();
+});
+
 document.getElementById('addBtn').addEventListener('click', () => {
   const startEl = document.getElementById('startInput');
   const endEl   = document.getElementById('endInput');
@@ -1766,7 +1810,7 @@ document.getElementById('examList').addEventListener('click', (e) => {
   if (!delBtn) return;
   const id = delBtn.dataset.id;
   if (!id) return;
-  saveExams(getExams().filter(x => x.id !== id));
+  saveExams(getExams().filter(x => String(x.id) !== id));
   render();
 });
 
@@ -1864,6 +1908,8 @@ customDialog.removeEventListener('closed', function(){});
 customDialog.addEventListener('closed', () => {
   // 原有逻辑：临时自定义科目
   if (pendingCustomSubject) {
+    selectedSubject = pendingCustomSubject;
+    subjectPickerBtn.textContent = '科目：' + pendingCustomSubject;
     let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
     if (!customItem) {
       customItem = document.createElement('mdui-menu-item');
@@ -1923,8 +1969,42 @@ setInterval(() => {
   updateClock();
   render();
 }, 1000);
+function initClockFace() {
+  const ticks = document.getElementById('clockTicks');
+  if (!ticks) return;
+  for (let i = 0; i < 60; i++) {
+    const angle = i * 6 * Math.PI / 180;
+    const major = i % 5 === 0;
+    const outer = 174;
+    const inner = major ? 153 : 166;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', 200 + Math.sin(angle) * inner);
+    line.setAttribute('y1', 200 - Math.cos(angle) * inner);
+    line.setAttribute('x2', 200 + Math.sin(angle) * outer);
+    line.setAttribute('y2', 200 - Math.cos(angle) * outer);
+    line.setAttribute('class', 'clock-tick' + (major ? ' major' : ''));
+    ticks.appendChild(line);
+  }
+  const numbers = document.getElementById('clockNumbers');
+  for (let n = 1; n <= 12; n++) {
+    const angle = n * 30 * Math.PI / 180;
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', 200 + Math.sin(angle) * 132);
+    text.setAttribute('y', 200 - Math.cos(angle) * 132);
+    text.setAttribute('class', 'clock-number');
+    text.textContent = n;
+    numbers.appendChild(text);
+  }
+}
+initClockFace();
 updateClock();
 render();
+scheduleCountdownRender();
+function animateClock() {
+  updateClock();
+  requestAnimationFrame(animateClock);
+}
+animateClock();
 
 if (window.customElements && customElements.whenDefined) {
   Promise.allSettled([
