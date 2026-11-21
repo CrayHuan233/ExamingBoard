@@ -103,7 +103,6 @@
       <div class="main-label" id="mainLabel">当前状态</div>
       <div class="main-name waiting" id="mainName">暂无考试安排</div>
       <div class="cd-row">
-        <div class="cd-unit"><div class="cd-num" id="cdA">0</div><div class="cd-text" id="cdAT">天</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
@@ -165,11 +164,10 @@ function getPhase(startMs, endMs, now) {
 
 function diffParts(absDiff) {
   let d = Math.max(0, absDiff);
-  const days = Math.floor(d / 86400000); d -= days * 86400000;
   const hrs  = Math.floor(d / 3600000);  d -= hrs  * 3600000;
   const mins = Math.floor(d / 60000);    d -= mins * 60000;
   const secs = Math.floor(d / 1000);
-  return { days, hrs, mins, secs };
+  return { hrs, mins, secs };
 }
 
 function updateClock() {
@@ -185,11 +183,9 @@ function renderMain(exams, now) {
   const mainName  = document.getElementById("mainName");
   const mainLabel = document.getElementById("mainLabel");
   const status    = document.getElementById("status");
-  const cdA = document.getElementById("cdA");
   const cdB = document.getElementById("cdB");
   const cdC = document.getElementById("cdC");
   const cdD = document.getElementById("cdD");
-  const cdAT = document.getElementById("cdAT");
   const cdBT = document.getElementById("cdBT");
   const cdCT = document.getElementById("cdCT");
   const cdDT = document.getElementById("cdDT");
@@ -205,11 +201,10 @@ function renderMain(exams, now) {
     mainLabel.textContent = "当前状态";
     status.textContent = "请添加考试";
     status.className = "status";
-    cdA.textContent = "0"; cdB.textContent = "00";
-    cdC.textContent = "00"; cdD.textContent = "00";
-    cdAT.textContent = "天"; cdBT.textContent = "时";
+    cdB.textContent = "00"; cdC.textContent = "00"; cdD.textContent = "00";
+    cdBT.textContent = "时";
     cdCT.textContent = "分"; cdDT.textContent = "秒";
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = "cd-num");
+    [cdB, cdC, cdD].forEach(e => e.className = "cd-num");
     return;
   }
 
@@ -220,32 +215,29 @@ function renderMain(exams, now) {
   if (phase === "waiting") {
     mainLabel.textContent = "距离考试开始";
     const p = diffParts(target.startMs - now);
-    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdAT.textContent = "天"; cdBT.textContent = "时";
+    cdB.textContent = pad(p.hrs); cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdBT.textContent = "时";
     cdCT.textContent = "分"; cdDT.textContent = "秒";
-    const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
-    [cdA, cdB, cdC, cdD].forEach(e => { e.className = "cd-num" + (urgent ? " urgent" : ""); });
+    const urgent = p.hrs === 0 && p.mins < 30;
+    [cdB, cdC, cdD].forEach(e => { e.className = "cd-num" + (urgent ? " urgent" : ""); });
     status.textContent = "倒计时中";
     status.className = "status waiting";
   } else if (phase === "running") {
     mainLabel.textContent = "考试进行中";
     const p = diffParts(now - target.startMs);
-    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdAT.textContent = "天"; cdBT.textContent = "时";
+    cdB.textContent = pad(p.hrs); cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdBT.textContent = "时";
     cdCT.textContent = "分"; cdDT.textContent = "秒";
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = "cd-num running");
+    [cdB, cdC, cdD].forEach(e => e.className = "cd-num running");
     status.textContent = "已开始，计时中";
     status.className = "status running";
   } else {
     mainLabel.textContent = "考试已结束";
     const p = diffParts(target.endMs - target.startMs);
-    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
-    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdAT.textContent = "天"; cdBT.textContent = "时";
+    cdB.textContent = pad(p.hrs); cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdBT.textContent = "时";
     cdCT.textContent = "分"; cdDT.textContent = "秒";
-    [cdA, cdB, cdC, cdD].forEach(e => e.className = "cd-num ended");
+    [cdB, cdC, cdD].forEach(e => e.className = "cd-num ended");
     status.textContent = "已结束";
     status.className = "status ended";
   }
@@ -263,11 +255,11 @@ function renderList(exams, now) {
     let cdCls = "";
     if (phase === "waiting") {
       const p = diffParts(ex.startMs - now);
-      cdText = "剩 " + (p.days > 0 ? p.days + "天 " : "") + pad(p.hrs) + ":" + pad(p.mins) + ":" + pad(p.secs);
-      cdCls = p.days === 0 && p.hrs === 0 && p.mins < 30 ? "urgent" : "";
+      cdText = "剩 " + pad(p.hrs) + ":" + pad(p.mins) + ":" + pad(p.secs);
+      cdCls = p.hrs === 0 && p.mins < 30 ? "urgent" : "";
     } else if (phase === "running") {
       const p = diffParts(now - ex.startMs);
-      cdText = "已考 " + (p.days > 0 ? p.days + "天 " : "") + pad(p.hrs) + ":" + pad(p.mins) + ":" + pad(p.secs);
+      cdText = "已考 " + pad(p.hrs) + ":" + pad(p.mins) + ":" + pad(p.secs);
       cdCls = "running";
     } else {
       cdText = "已结束";
