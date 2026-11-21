@@ -1,140 +1,778 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="mdui-theme-auto">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no">
+<meta name="renderer" content="webkit">
 <title>多门考试倒计时时钟</title>
+<link rel="icon" type="image/svg+xml" href="https://fonts.gstatic.com/s/i/materialicons/schedule/v12/24px.svg">
+<link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-    color: #1e293b;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 36px 16px 60px;
+/* ========== 字体 @font-face ========== */
+@font-face {
+  font-family: 'XiaolaiMono';
+  src: url('./src/XiaolaiMono-Regular.subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ========== 基础重置 ========== */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; min-height: 100%;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: rgb(var(--mdui-color-surface-container-low));
+  color: rgb(var(--mdui-color-on-surface));
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 84px 16px 80px;
+  overflow-y: auto;
+}
+body.font-page-open { overflow: hidden; }
+body.focus-mode { overflow: hidden; }
+
+/* ========== 顶栏 ========== */
+.app-top-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 900;
+}
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+}
+
+/* ========== 主页面布局 ========== */
+.app {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.page { display: none; }
+.page.active { display: block; }
+
+/* ========== 卡片 ========== */
+.card {
+  background: rgb(var(--mdui-color-surface-container));
+  border-radius: 24px;
+  padding: 26px 24px 22px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.04);
+  margin-bottom: 18px;
+  position: relative;
+}
+.title {
+  font-size: 14px;
+  letter-spacing: 3px;
+  text-align: center;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-bottom: 6px;
+}
+
+/* =========================================================
+   时间显示区域 —— 应用 XiaolaiMono 字体
+   ========================================================= */
+.time-font {
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.now-time {
+  font-size: 48px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: rgb(var(--mdui-color-on-surface));
+  line-height: 1.15;
+  cursor: pointer;
+  transition: transform .2s, opacity .2s;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.now-time:active { transform: scale(.97); }
+.now-date {
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: 22px;
+}
+.divider {
+  height: 1px;
+  background: rgb(var(--mdui-color-outline-variant));
+  margin: 0 0 18px;
+  opacity: .5;
+}
+
+/* ========== 倒计时区域 ========== */
+.main-label {
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  text-align: center;
+}
+.main-name {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  margin: 6px 0 16px;
+  min-height: 30px;
+  color: rgb(var(--mdui-color-primary));
+  transition: color .2s;
+}
+.main-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
+.main-name.running { color: #059669; }
+.main-name.ended   { color: #b45309; }
+
+.cd-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: transform .2s, opacity .2s;
+}
+.cd-row:active { transform: scale(.98); }
+.cd-unit {
+  background: rgb(var(--mdui-color-surface-container-highest));
+  border-radius: 16px;
+  padding: 14px 10px 10px;
+  min-width: 70px;
+  text-align: center;
+  flex: 1;
+  max-width: 100px;
+}
+.cd-num {
+  font-size: 32px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--mdui-color-primary));
+  line-height: 1.1;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.cd-num.urgent  { color: #dc2626; }
+.cd-num.running { color: #059669; }
+.cd-num.ended   { color: #b45309; }
+.cd-text {
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 5px;
+}
+.status {
+  text-align: center;
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 6px;
+}
+.status.waiting { color: rgb(var(--mdui-color-primary)); }
+.status.running { color: #059669; }
+.status.ended   { color: #b45309; }
+
+/* ========== 按钮（使用 MDUI 默认圆角与高度） ========== */
+.btn-primary {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* ========== 计划管理页 ========== */
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.back-btn {
+  flex: 0 0 auto;
+}
+.page-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: rgb(var(--mdui-color-on-surface));
+}
+.form-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.form-row mdui-select { flex: 1; width: 100%; }
+.form-row mdui-text-field { flex: 1; }
+
+.list-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgb(var(--mdui-color-on-surface));
+  margin-bottom: 14px;
+}
+.empty {
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* 考试条目 */
+.exam-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgb(var(--mdui-color-surface-container-low));
+  border-radius: 16px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: border-color .2s, background .2s;
+}
+.exam-item.active {
+  border-color: rgb(var(--mdui-color-primary));
+  background: rgb(var(--mdui-color-surface-container));
+}
+.exam-info { flex: 1; min-width: 0; }
+.exam-name {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exam-time {
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 3px;
+}
+.exam-cd {
+  font-size: 13px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  white-space: nowrap;
+  text-align: right;
+  min-width: 110px;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.exam-cd.urgent  { color: #dc2626; }
+.exam-cd.running { color: #059669; }
+.exam-cd.ended   { color: #b45309; }
+.del-btn {
+  flex: 0 0 auto;
+}
+
+/* ========== 一镜到底层 ========== */
+#morphLayer {
+  position: fixed;
+  z-index: 999997;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  display: none;
+  will-change: left, top, width, height, border-radius, opacity, background-color;
+}
+#morphLayer.visible { opacity: 1; }
+
+/* 计划管理副页面容器 */
+.plan-page-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999996;
+  visibility: hidden;
+  pointer-events: none;
+  background: rgb(var(--mdui-color-surface));
+  touch-action: none;
+}
+.plan-page-overlay.active {
+  visibility: visible;
+  pointer-events: auto;
+}
+.plan-page-content {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 20px 16px 80px;
+}
+.plan-page-overlay.content-in .plan-page-content { opacity: 1; }
+
+.plan-inner {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ========== 焦点模式（点击放大） ========== */
+.focus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999989;
+  background: rgb(var(--mdui-color-surface-container-low));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 360ms cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0s linear 360ms;
+}
+.focus-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0s linear 0s;
+}
+
+.focus-main {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(92vw, 720px);
+  max-height: 80vh;
+  text-align: center;
+  padding: 20px;
+}
+
+/* 焦点模式时钟 */
+.focus-clock {
+  font-size: clamp(56px, 16vw, 120px);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--mdui-color-on-surface));
+  line-height: 1.1;
+  white-space: nowrap;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.focus-clock-date {
+  font-size: clamp(14px, 2.5vw, 20px);
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 8px;
+}
+
+/* 焦点模式倒计时 */
+.focus-cd-label {
+  font-size: clamp(14px, 2.2vw, 18px);
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-bottom: 8px;
+}
+.focus-cd-name {
+  font-size: clamp(20px, 3.5vw, 32px);
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: rgb(var(--mdui-color-primary));
+}
+.focus-cd-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
+.focus-cd-name.running { color: #059669; }
+.focus-cd-name.ended   { color: #b45309; }
+.focus-cd-row {
+  display: flex;
+  justify-content: center;
+  gap: clamp(8px, 2vw, 18px);
+  flex-wrap: nowrap;
+}
+.focus-cd-unit {
+  background: rgb(var(--mdui-color-surface-container-highest));
+  border-radius: clamp(12px, 2vw, 20px);
+  padding: clamp(12px, 2.5vw, 24px) clamp(8px, 1.8vw, 18px);
+  min-width: clamp(60px, 12vw, 120px);
+  text-align: center;
+}
+.focus-cd-num {
+  font-size: clamp(28px, 7vw, 64px);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--mdui-color-primary));
+  line-height: 1.1;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.focus-cd-num.urgent  { color: #dc2626; }
+.focus-cd-num.running { color: #059669; }
+.focus-cd-num.ended   { color: #b45309; }
+.focus-cd-text {
+  font-size: clamp(11px, 1.6vw, 15px);
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 4px;
+}
+.focus-status {
+  margin-top: 16px;
+  font-size: clamp(13px, 2vw, 17px);
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+.focus-status.waiting { color: rgb(var(--mdui-color-primary)); }
+.focus-status.running { color: #059669; }
+.focus-status.ended   { color: #b45309; }
+
+/* 右上角小挂件 */
+.focus-pip {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999994;
+  background: rgb(var(--mdui-color-surface-container));
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
+  cursor: pointer;
+  transition: transform .2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow .2s;
+  user-select: none;
+  max-width: 220px;
+  opacity: 0;
+  transform: scale(.85) translateY(-8px);
+  visibility: hidden;
+  pointer-events: none;
+}
+.focus-pip.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+.focus-pip:hover {
+  transform: scale(1.04) translateY(0);
+  box-shadow: 0 10px 30px rgba(0,0,0,.16), 0 3px 8px rgba(0,0,0,.08);
+}
+.focus-pip:active { transform: scale(.97); }
+.focus-pip-label {
+  font-size: 11px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.focus-pip-clock {
+  font-size: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--mdui-color-on-surface));
+  line-height: 1.2;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.focus-pip-date {
+  font-size: 10px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 2px;
+}
+.focus-pip-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  margin-bottom: 2px;
+}
+.focus-pip-name.waiting { color: rgb(var(--mdui-color-on-surface-variant)); }
+.focus-pip-name.running { color: #059669; }
+.focus-pip-name.ended   { color: #b45309; }
+.focus-pip-cd {
+  font-size: 15px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--mdui-color-primary));
+  white-space: nowrap;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+}
+.focus-pip-cd.urgent  { color: #dc2626; }
+.focus-pip-cd.running { color: #059669; }
+.focus-pip-cd.ended   { color: #b45309; }
+.focus-pip-status {
+  font-size: 11px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-top: 2px;
+}
+
+/* 关闭按钮 */
+.focus-close {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 999995;
+  opacity: 0;
+  transform: scale(.85);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s, visibility 0s linear .25s;
+}
+.focus-overlay.active ~ .focus-close.active {
+  opacity: 1;
+  transform: scale(1);
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity .25s .15s, transform .25s .15s, visibility 0s linear 0s;
+}
+
+/* 提示文字 */
+.focus-hint {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999994;
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  background: rgb(var(--mdui-color-surface-container));
+  padding: 8px 18px;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .25s, visibility 0s linear .25s;
+  white-space: nowrap;
+}
+.focus-overlay.active ~ .focus-hint.active {
+  opacity: .85;
+  visibility: visible;
+  transition: opacity .25s .3s, visibility 0s linear 0s;
+}
+
+@media (max-width: 480px) {
+  body { padding: 76px 12px 80px; }
+  .card { padding: 22px 18px 18px; }
+  .cd-row { gap: 6px; }
+  .cd-unit { min-width: 0; padding: 10px 4px 8px; }
+  .cd-num { font-size: 26px; }
+  .now-time { font-size: 38px; }
+  .exam-item { flex-wrap: wrap; }
+  .exam-cd { min-width: 0; }
+  .plan-page-content { padding: 16px 12px 70px; }
+  .focus-pip { top: 14px; right: 14px; padding: 10px 12px; max-width: 160px; }
+  .focus-pip-clock { font-size: 17px; }
+  .focus-pip-cd { font-size: 13px; }
+  .focus-pip-name { font-size: 12px; max-width: 130px; }
+  .focus-close { top: 14px; left: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #morphLayer, .plan-page-content, .focus-overlay, .focus-pip, .focus-close, .focus-hint {
+    transition-duration: .01ms !important;
+    animation: none !important;
   }
-  .app { width: 500px; max-width: 100%; }
-  .card {
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid #e2e8f0;
-    border-radius: 22px;
-    padding: 26px 26px 22px;
-    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.1);
-    margin-bottom: 18px;
-  }
-  .title { font-size: 17px; color: #64748b; letter-spacing: 2px; text-align: center; margin-bottom: 12px; }
-  .now-time { font-size: 42px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; color: #0f172a; }
-  .now-date { font-size: 13px; color: #64748b; text-align: center; margin-top: 4px; margin-bottom: 20px; }
-  .divider { height: 1px; background: #e2e8f0; margin: 0 0 18px; }
-  .main-label { font-size: 13px; color: #64748b; text-align: center; }
-  .main-name { font-size: 20px; font-weight: 700; text-align: center; color: #0284c7; margin: 6px 0 14px; min-height: 28px; }
-  .main-name.waiting { color: #64748b; }
-  .main-name.running { color: #059669; }
-  .main-name.ended { color: #b45309; }
-  .cd-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; }
-  .cd-unit { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 8px 8px; min-width: 66px; text-align: center; }
-  .cd-num { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; color: #0284c7; }
-  .cd-num.urgent { color: #dc2626; }
-  .cd-num.running { color: #059669; }
-  .cd-num.ended { color: #b45309; }
-  .cd-text { font-size: 12px; color: #64748b; margin-top: 4px; }
-  .status { text-align: center; font-size: 13px; color: #64748b; margin-top: 6px; }
-  .status.waiting { color: #0284c7; }
-  .status.running { color: #059669; }
-  .status.ended { color: #b45309; }
-  .btn { background: #0284c7; color: #fff; border: none; border-radius: 12px; padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; }
-  .btn:hover { background: #0369a1; }
-  .btn-secondary { background: #fff; color: #0369a1; border: 1px solid #bae6fd; margin-top: 16px; }
-  .btn-secondary:hover { background: #f0f9ff; }
-  .page[hidden] { display: none; }
-  .page-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-  .back-btn { flex: 0 0 auto; border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 10px; padding: 9px 12px; font-size: 14px; cursor: pointer; }
-  .back-btn:hover { background: #f8fafc; }
-  .page-title { font-size: 18px; font-weight: 700; color: #0f172a; }
-  .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
-  input[type="text"], input[type="datetime-local"] {
-    color-scheme: light;
-    background: #fff;
-    border: 1px solid #cbd5e1;
-    color: #1e293b;
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 14px;
-    flex: 1;
-    min-width: 0;
-  }
-  input::placeholder { color: #94a3b8; }
-  input:focus { outline: 2px solid #7dd3fc; outline-offset: 1px; border-color: #0284c7; }
-  .list-title { font-size: 15px; color: #1e293b; margin-bottom: 12px; }
-  .empty { font-size: 13px; color: #64748b; text-align: center; padding: 14px 0; }
-  .exam-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 10px; }
-  .exam-item.active { border-color: #7dd3fc; background: #f0f9ff; }
-  .exam-info { flex: 1; min-width: 0; }
-  .exam-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0f172a; }
-  .exam-time { font-size: 12px; color: #64748b; margin-top: 2px; }
-  .exam-cd { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: #475569; white-space: nowrap; text-align: right; min-width: 110px; }
-  .exam-cd.urgent { color: #dc2626; }
-  .exam-cd.running { color: #059669; }
-  .exam-cd.ended { color: #b45309; }
-  .del-btn { background: #fff; border: 1px solid #fca5a5; color: #dc2626; border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
-  .del-btn:hover { background: #fef2f2; }
-  @media (max-width: 420px) {
-    body { padding: 20px 12px 40px; }
-    .card { padding: 22px 18px 18px; }
-    .cd-row { gap: 6px; }
-    .cd-unit { min-width: 0; flex: 1; padding: 10px 4px 8px; }
-    .cd-num { font-size: 25px; }
-    .exam-item { flex-wrap: wrap; }
-    .exam-cd { min-width: 0; }
-  }
+}
+
+/* ========== 修复：自定义科目Dialog浮在plan-page-overlay上层 ========== */
+#customSubjectDialog {
+  --mdui-dialog-z-index: 999998 !important;
+  z-index: 999998 !important;
+}
+/* dialog 内部遮罩层 */
+#customSubjectDialog::part(overlay) {
+  z-index: 999998 !important;
+}
+/* dialog 内容面板 */
+#customSubjectDialog::part(panel) {
+  z-index: 999999 !important;
+}
+/* 给dialog的description插槽内容区域增加顶部内边距，解决第一个text‑field label被切 */
+#customSubjectDialog::part(description) {
+  padding-top: 12px !important;
+}
+
+
 </style>
 </head>
 <body>
+
+<!-- ==================== 顶栏 ==================== -->
+<mdui-top-app-bar class="app-top-bar" variant="small" scroll-behavior="shrink elevate">
+  <mdui-button-icon icon="schedule" disabled style="opacity:.85"></mdui-button-icon>
+  <mdui-top-app-bar-title>考试倒计时</mdui-top-app-bar-title>
+  <div style="flex-grow: 1"></div>
+  <div class="top-bar-actions">
+    <mdui-button-icon id="themeToggleBtn" icon="dark_mode" title="切换深浅色"></mdui-button-icon>
+  </div>
+</mdui-top-app-bar>
+
 <div class="app">
-  <main id="dashboardPage" class="page">
+  <br><br>
+  <!-- ==================== 主页（倒计时） ==================== -->
+  <main id="dashboardPage" class="page active">
     <div class="card">
       <div class="title">考试倒计时时钟</div>
-      <div class="now-time" id="nowTime">--:--:--</div>
+      <div class="now-time" id="nowTime" title="点击放大">--:--:--</div>
       <div class="now-date" id="nowDate">----/--/--</div>
       <div class="divider"></div>
       <div class="main-label" id="mainLabel">当前状态</div>
       <div class="main-name waiting" id="mainName">暂无考试安排</div>
-      <div class="cd-row">
+      <div class="cd-row" id="cdRow" title="点击放大">
+        <div class="cd-unit"><div class="cd-num" id="cdA">0</div><div class="cd-text" id="cdAT">天</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
       </div>
       <div class="status" id="status">请添加考试</div>
-      <button class="btn btn-secondary" id="openPlanBtn" type="button">管理考试计划</button>
+      <mdui-button id="openPlanBtn" variant="filled" class="btn-primary" icon="edit_calendar">管理考试计划</mdui-button>
     </div>
-  </main>
-
-  <main id="planPage" class="page" hidden>
-    <div class="page-heading">
-      <button class="back-btn" id="backBtn" type="button">← 返回</button>
-      <h1 class="page-title">考试计划管理</h1>
-    </div>
-    <section class="card" aria-labelledby="addTitle">
-      <h2 class="list-title" id="addTitle">添加考试</h2>
-      <div class="form-row"><input type="text" id="nameInput" placeholder="科目名称，如 高等数学" aria-label="科目名称" /></div>
-      <div class="form-row"><input type="datetime-local" id="startInput" aria-label="考试开始时间" /></div>
-      <div class="form-row"><input type="datetime-local" id="endInput" aria-label="考试结束时间" /></div>
-      <button class="btn" id="addBtn" type="button">添加考试</button>
-    </section>
-    <section class="card" aria-labelledby="examListTitle">
-      <h2 class="list-title" id="examListTitle">考试列表</h2>
-      <div id="examList"></div>
-    </section>
   </main>
 </div>
 
-<script>
-const KEY = "exam_schedule_v2";
+<!-- ==================== 焦点放大模式 ==================== -->
+<div id="focusOverlay" class="focus-overlay" aria-hidden="true">
+  <div class="focus-main" id="focusMain">
+    <div id="focusClockView" style="display:none">
+      <div class="focus-clock" id="focusClockTime">--:--:--</div>
+      <div class="focus-clock-date" id="focusClockDate">----/--/--</div>
+    </div>
+    <div id="focusCdView" style="display:none">
+      <div class="focus-cd-label" id="focusCdLabel">距离考试开始</div>
+      <div class="focus-cd-name" id="focusCdName">--</div>
+      <div class="focus-cd-row">
+        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdA">0</div><div class="focus-cd-text" id="focusCdAT">天</div></div>
+        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdB">00</div><div class="focus-cd-text" id="focusCdBT">时</div></div>
+        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdC">00</div><div class="focus-cd-text" id="focusCdCT">分</div></div>
+        <div class="focus-cd-unit"><div class="focus-cd-num" id="focusCdD">00</div><div class="focus-cd-text" id="focusCdDT">秒</div></div>
+      </div>
+      <div class="focus-status" id="focusStatus">请添加考试</div>
+    </div>
+  </div>
+</div>
+<mdui-button-icon id="focusCloseBtn" class="focus-close" icon="close" title="退出放大"></mdui-button-icon>
+<div class="focus-hint" id="focusHint">点击右上角小组件以切换焦点</div>
 
-function pad(n) { return String(n).padStart(2, "0"); }
+<!-- 右上角小挂件 -->
+<div id="focusPip" class="focus-pip" aria-hidden="true">
+  <div id="focusPipClockView" style="display:none">
+    <div class="focus-pip-label">时钟</div>
+    <div class="focus-pip-clock" id="focusPipClockTime">--:--:--</div>
+    <div class="focus-pip-date" id="focusPipClockDate">----/--/--</div>
+  </div>
+  <div id="focusPipCdView" style="display:none">
+    <div class="focus-pip-label" id="focusPipLabel">倒计时</div>
+    <div class="focus-pip-name waiting" id="focusPipName">--</div>
+    <div class="focus-pip-cd" id="focusPipCd">--:--:--</div>
+    <div class="focus-pip-status" id="focusPipStatus">--</div>
+  </div>
+</div>
+
+<!-- ==================== 计划管理副页面（一镜到底目标） ==================== -->
+<div id="planPageOverlay" class="plan-page-overlay" aria-hidden="true">
+  <div class="plan-page-content">
+    <div class="plan-inner">
+      <div class="plan-header">
+        <mdui-button-icon id="planCloseBtn" class="back-btn" icon="arrow_back" title="返回"></mdui-button-icon>
+        <h1 class="page-title">考试计划管理</h1>
+      </div>
+
+      <section class="card" aria-labelledby="addTitle">
+        <h2 class="list-title" id="addTitle">添加考试</h2>
+        <div class="form-row">
+          <mdui-select id="subjectSelect" variant="outlined" label="科目">
+            <mdui-menu-item value="语文">语文</mdui-menu-item>
+            <mdui-menu-item value="数学">数学</mdui-menu-item>
+            <mdui-menu-item value="英语">英语</mdui-menu-item>
+            <mdui-menu-item value="物理">物理</mdui-menu-item>
+            <mdui-menu-item value="化学">化学</mdui-menu-item>
+            <mdui-menu-item value="生物">生物</mdui-menu-item>
+            <mdui-menu-item value="政治">政治</mdui-menu-item>
+            <mdui-menu-item value="历史">历史</mdui-menu-item>
+            <mdui-menu-item value="地理">地理</mdui-menu-item>
+            <mdui-menu-item value="__custom__">自定义…</mdui-menu-item>
+          </mdui-select>
+        </div>
+        <div class="form-row"><mdui-text-field id="startInput" label="开始时间" variant="outlined" type="datetime-local" clearable></mdui-text-field></div>
+        <div class="form-row"><mdui-text-field id="endInput" label="结束时间" variant="outlined" type="datetime-local" clearable></mdui-text-field></div>
+        <mdui-button id="addBtn" variant="filled" class="btn-primary" icon="add">添加考试</mdui-button>
+      </section>
+
+      <section class="card" aria-labelledby="examListTitle">
+        <h2 class="list-title" id="examListTitle">考试列表</h2>
+        <div id="examList"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- 自定义科目对话框 -->
+<mdui-dialog id="customSubjectDialog" close-on-esc close-on-overlay-click>
+  <span slot="headline">自定义科目</span>
+  <div slot="description" style="width:min(320px,70vw);display:flex;flex-direction:column;gap:12px;">
+    <mdui-text-field id="customSubjectInput" label="科目名称" variant="outlined" placeholder="如……还能有什么别的科目吗" clearable></mdui-text-field>
+    <mdui-checkbox id="persistSubjectCheck" selected>持久化保存该自定义科目，下次仍然可选</mdui-checkbox>
+    <mdui-select id="delCustomSubjectSelect" variant="outlined" label="管理已保存自定义科目"  placeholder="添加的科目找不到则说明它未持久化保存"></mdui-select>
+  </div>
+  <mdui-button slot="action" variant="text" id="customSubjectCancel">取消</mdui-button>
+  <mdui-button slot="action" variant="tonal" id="customSubjectConfirm">确定</mdui-button>
+</mdui-dialog>
+
+<div id="morphLayer"></div>
+
+<script>
+/* =========================================================
+   主题色
+   ========================================================= */
+(function() {
+  if (window.mdui && typeof mdui.setColorScheme === 'function') {
+    mdui.setColorScheme('#006463');
+  }
+})();
+
+/* =========================================================
+   深浅色切换
+   ========================================================= */
+(function initThemeToggle() {
+  const btn = document.getElementById('themeToggleBtn');
+  const root = document.documentElement;
+  const THEME_KEY = 'exam-clock-theme';
+
+  function applyTheme(theme) {
+    root.classList.remove('mdui-theme-auto', 'mdui-theme-light', 'mdui-theme-dark');
+    if (theme === 'light' || theme === 'dark') {
+      root.classList.add('mdui-theme-' + theme);
+      btn.setAttribute('icon', theme === 'dark' ? 'light_mode' : 'dark_mode');
+    } else {
+      root.classList.add('mdui-theme-auto');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      btn.setAttribute('icon', prefersDark ? 'light_mode' : 'dark_mode');
+    }
+  }
+
+  function getSaved() {
+    try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch { return 'auto'; }
+  }
+
+  applyTheme(getSaved());
+
+  btn.addEventListener('click', () => {
+    const cur = getSaved();
+    let next;
+    if (cur === 'auto') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      next = prefersDark ? 'light' : 'dark';
+    } else if (cur === 'dark') {
+      next = 'light';
+    } else {
+      next = 'dark';
+    }
+    try { localStorage.setItem(THEME_KEY, next); } catch {}
+    applyTheme(next);
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (getSaved() === 'auto') applyTheme('auto');
+  });
+})();
+
+/* =========================================================
+   考试数据逻辑
+   ========================================================= */
+const KEY = 'exam_schedule_v2';
+
+function pad(n) { return String(n).padStart(2, '0'); }
 
 function getExams() {
   try { return JSON.parse(localStorage.getItem(KEY)) || []; }
@@ -146,124 +784,148 @@ function saveExams(list) {
 
 function fmtDT(iso) {
   const d = new Date(iso);
-  return d.getFullYear() + "/" + pad(d.getMonth()+1) + "/" + pad(d.getDate())
-    + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 function escapeHtml(s) {
-  const d = document.createElement("div");
+  const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
 }
 
 function getPhase(startMs, endMs, now) {
-  if (now < startMs) return "waiting";
-  if (now < endMs) return "running";
-  return "ended";
+  if (now < startMs) return 'waiting';
+  if (now < endMs) return 'running';
+  return 'ended';
 }
 
 function diffParts(absDiff) {
   let d = Math.max(0, absDiff);
+  const days = Math.floor(d / 86400000); d -= days * 86400000;
   const hrs  = Math.floor(d / 3600000);  d -= hrs  * 3600000;
   const mins = Math.floor(d / 60000);    d -= mins * 60000;
   const secs = Math.floor(d / 1000);
-  return { hrs, mins, secs };
+  return { days, hrs, mins, secs };
 }
 
+function getActiveExam(now) {
+  const exams = getExams()
+    .map(ex => ({ ...ex, startMs: new Date(ex.start).getTime(), endMs: new Date(ex.end).getTime() }))
+    .sort((a, b) => a.startMs - b.startMs);
+  for (const ex of exams) {
+    if (getPhase(ex.startMs, ex.endMs, now) !== 'ended') return ex;
+  }
+  return null;
+}
+
+/* =========================================================
+   渲染主页时钟 + 倒计时
+   ========================================================= */
 function updateClock() {
   const now = new Date();
-  document.getElementById("nowTime").textContent =
-    pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
-  document.getElementById("nowDate").textContent =
-    now.getFullYear() + "/" + pad(now.getMonth()+1) + "/" + pad(now.getDate())
-    + " " + ["周日","周一","周二","周三","周四","周五","周六"][now.getDay()];
+  const nowTimeEl = document.getElementById('nowTime');
+  const nowDateEl = document.getElementById('nowDate');
+  if (nowTimeEl) nowTimeEl.textContent =
+    pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+  if (nowDateEl) nowDateEl.textContent =
+    now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate())
+    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
 }
 
 function renderMain(exams, now) {
-  const mainName  = document.getElementById("mainName");
-  const mainLabel = document.getElementById("mainLabel");
-  const status    = document.getElementById("status");
-  const cdB = document.getElementById("cdB");
-  const cdC = document.getElementById("cdC");
-  const cdD = document.getElementById("cdD");
-  const cdBT = document.getElementById("cdBT");
-  const cdCT = document.getElementById("cdCT");
-  const cdDT = document.getElementById("cdDT");
+  const mainName  = document.getElementById('mainName');
+  const mainLabel = document.getElementById('mainLabel');
+  const status    = document.getElementById('status');
+  const cdA = document.getElementById('cdA');
+  const cdB = document.getElementById('cdB');
+  const cdC = document.getElementById('cdC');
+  const cdD = document.getElementById('cdD');
+  const cdAT = document.getElementById('cdAT');
+  const cdBT = document.getElementById('cdBT');
+  const cdCT = document.getElementById('cdCT');
+  const cdDT = document.getElementById('cdDT');
+  if (!mainName) return;
 
   let target = null;
   for (const ex of exams) {
-    if (getPhase(ex.startMs, ex.endMs, now) !== "ended") { target = ex; break; }
+    if (getPhase(ex.startMs, ex.endMs, now) !== 'ended') { target = ex; break; }
   }
 
   if (!target) {
-    mainName.textContent = "暂无考试安排";
-    mainName.className = "main-name waiting";
-    mainLabel.textContent = "当前状态";
-    status.textContent = "请添加考试";
-    status.className = "status";
-    cdB.textContent = "00"; cdC.textContent = "00"; cdD.textContent = "00";
-    cdBT.textContent = "时";
-    cdCT.textContent = "分"; cdDT.textContent = "秒";
-    [cdB, cdC, cdD].forEach(e => e.className = "cd-num");
+    mainName.textContent = '暂无考试安排';
+    mainName.className = 'main-name waiting';
+    mainLabel.textContent = '当前状态';
+    status.textContent = '请添加考试';
+    status.className = 'status';
+    cdA.textContent = '0'; cdB.textContent = '00';
+    cdC.textContent = '00'; cdD.textContent = '00';
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num');
     return;
   }
 
   const phase = getPhase(target.startMs, target.endMs, now);
   mainName.textContent = target.name;
-  mainName.className = "main-name " + phase;
+  mainName.className = 'main-name ' + phase;
 
-  if (phase === "waiting") {
-    mainLabel.textContent = "距离考试开始";
+  if (phase === 'waiting') {
+    mainLabel.textContent = '距离考试开始';
     const p = diffParts(target.startMs - now);
-    cdB.textContent = pad(p.hrs); cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdBT.textContent = "时";
-    cdCT.textContent = "分"; cdDT.textContent = "秒";
-    const urgent = p.hrs === 0 && p.mins < 30;
-    [cdB, cdC, cdD].forEach(e => { e.className = "cd-num" + (urgent ? " urgent" : ""); });
-    status.textContent = "倒计时中";
-    status.className = "status waiting";
-  } else if (phase === "running") {
-    mainLabel.textContent = "考试进行中";
+    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+    [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'cd-num' + (urgent ? ' urgent' : ''); });
+    status.textContent = '倒计时中';
+    status.className = 'status waiting';
+  } else if (phase === 'running') {
+    mainLabel.textContent = '考试进行中';
     const p = diffParts(now - target.startMs);
-    cdB.textContent = pad(p.hrs); cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdBT.textContent = "时";
-    cdCT.textContent = "分"; cdDT.textContent = "秒";
-    [cdB, cdC, cdD].forEach(e => e.className = "cd-num running");
-    status.textContent = "已开始，计时中";
-    status.className = "status running";
+    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num running');
+    status.textContent = '已开始，计时中';
+    status.className = 'status running';
   } else {
-    mainLabel.textContent = "考试已结束";
+    mainLabel.textContent = '考试已结束';
     const p = diffParts(target.endMs - target.startMs);
-    cdB.textContent = pad(p.hrs); cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
-    cdBT.textContent = "时";
-    cdCT.textContent = "分"; cdDT.textContent = "秒";
-    [cdB, cdC, cdD].forEach(e => e.className = "cd-num ended");
-    status.textContent = "已结束";
-    status.className = "status ended";
+    cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+    cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+    cdAT.textContent = '天'; cdBT.textContent = '时';
+    cdCT.textContent = '分'; cdDT.textContent = '秒';
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'cd-num ended');
+    status.textContent = '已结束';
+    status.className = 'status ended';
   }
 }
 
 function renderList(exams, now) {
-  const container = document.getElementById("examList");
+  const container = document.getElementById('examList');
+  if (!container) return;
   if (exams.length === 0) {
     container.innerHTML = '<div class="empty">暂无考试</div>';
     return;
   }
   container.innerHTML = exams.map(ex => {
     const phase = getPhase(ex.startMs, ex.endMs, now);
-    let cdText = "";
-    let cdCls = "";
-    if (phase === "waiting") {
+    let cdText = '';
+    let cdCls = '';
+    if (phase === 'waiting') {
       const p = diffParts(ex.startMs - now);
-      cdText = "剩 " + pad(p.hrs) + ":" + pad(p.mins) + ":" + pad(p.secs);
-      cdCls = p.hrs === 0 && p.mins < 30 ? "urgent" : "";
-    } else if (phase === "running") {
+      cdText = '剩 ' + (p.days > 0 ? p.days + '天 ' : '') + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      cdCls = p.days === 0 && p.hrs === 0 && p.mins < 30 ? 'urgent' : '';
+    } else if (phase === 'running') {
       const p = diffParts(now - ex.startMs);
-      cdText = "已考 " + pad(p.hrs) + ":" + pad(p.mins) + ":" + pad(p.secs);
-      cdCls = "running";
+      cdText = '已考 ' + (p.days > 0 ? p.days + '天 ' : '') + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      cdCls = 'running';
     } else {
-      cdText = "已结束";
-      cdCls = "ended";
+      cdText = '已结束';
+      cdCls = 'ended';
     }
     return `<div class="exam-item ${phase === 'waiting' ? 'active' : ''}">
       <div class="exam-info">
@@ -271,9 +933,9 @@ function renderList(exams, now) {
         <div class="exam-time">${fmtDT(ex.start)} — ${fmtDT(ex.end)}</div>
       </div>
       <div class="exam-cd ${cdCls}">${cdText}</div>
-      <button class="del-btn" data-id="${escapeHtml(String(ex.id))}" type="button" aria-label="删除${escapeHtml(ex.name)}">删除</button>
+      <mdui-button-icon class="del-btn" data-id="${escapeHtml(String(ex.id))}" icon="delete_outline" title="删除"></mdui-button-icon>
     </div>`;
-  }).join("");
+  }).join('');
 }
 
 function render() {
@@ -283,51 +945,692 @@ function render() {
     .sort((a, b) => a.startMs - b.startMs);
   renderMain(exams, now);
   renderList(exams, now);
+  if (focusMode.active) renderFocus(now);
 }
 
-function showPage(page) {
-  const dashboard = page === "dashboard";
-  document.getElementById("dashboardPage").hidden = !dashboard;
-  document.getElementById("planPage").hidden = dashboard;
-  if (dashboard) document.getElementById("openPlanBtn").focus();
-  else document.getElementById("backBtn").focus();
+/* =========================================================
+   一镜到底：计划管理页
+   ========================================================= */
+(function initMorph() {
+  const openBtn = document.getElementById('openPlanBtn');
+  const closeBtn = document.getElementById('planCloseBtn');
+  const overlay = document.getElementById('planPageOverlay');
+  const content = overlay.querySelector('.plan-page-content');
+  const morphLayer = document.getElementById('morphLayer');
+
+  if (!openBtn || !overlay) return;
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const DURATION = prefersReducedMotion ? 0 : 650;
+  const RADIUS_TAIL = prefersReducedMotion ? 0 : 260;
+  const RADIUS_DELAY = prefersReducedMotion ? 0 : 120;
+  const RADIUS_HOLD = prefersReducedMotion ? 0 : 48;
+  const RADIUS_LEAD = prefersReducedMotion ? 0 : 80;
+  const FADE = prefersReducedMotion ? 0 : 80;
+  const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const FALLBACK_COLOR = '#006463';
+
+  let morphState = 'idle';
+  let animToken = 0;
+  let radiusTimer = null;
+
+  function getButtonColor() {
+    const cs = getComputedStyle(openBtn);
+    let bg = cs.backgroundColor;
+    if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') {
+      const primary = getComputedStyle(document.body).getPropertyValue('--mdui-color-primary').trim();
+      bg = primary ? (primary.startsWith('rgb') ? primary : `rgb(${primary})`) : FALLBACK_COLOR;
+    }
+    return bg;
+  }
+  function getSurfaceColor() {
+    const raw = getComputedStyle(document.body).getPropertyValue('--mdui-color-surface').trim();
+    if (!raw) return '#ffffff';
+    return raw.startsWith('rgb') ? raw : `rgb(${raw})`;
+  }
+  function getButtonRadius(rect) {
+    const cs = getComputedStyle(openBtn);
+    const m = (cs.borderRadius || '0px').match(/([\d.]+)px/);
+    let rpx = m ? parseFloat(m[1]) : 0;
+    const maxR = Math.min(rect.width, rect.height) / 2;
+    if (rpx > maxR) rpx = maxR;
+    return rpx + 'px';
+  }
+
+  function setRect(el, rect, radius) {
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    el.style.width = rect.width + 'px';
+    el.style.height = rect.height + 'px';
+    el.style.borderRadius = radius;
+  }
+  function sizeTransition() {
+    return [
+      `left ${DURATION}ms ${EASING}`, `top ${DURATION}ms ${EASING}`,
+      `width ${DURATION}ms ${EASING}`, `height ${DURATION}ms ${EASING}`
+    ].join(', ');
+  }
+  function radiusTransition(delay) { return `border-radius ${RADIUS_TAIL}ms ${EASING} ${delay}ms`; }
+  function clearRadiusTimer() { if (radiusTimer) { clearTimeout(radiusTimer); radiusTimer = null; } }
+
+  function waitSize(el) {
+    return new Promise((resolve) => {
+      if (DURATION === 0) { resolve(); return; }
+      let done = false;
+      const finish = () => { if (done) return; done = true; el.removeEventListener('transitionend', handler); resolve(); };
+      const handler = (e) => { if (e.target === el && e.propertyName === 'width') finish(); };
+      el.addEventListener('transitionend', handler);
+      setTimeout(finish, DURATION + 150);
+    });
+  }
+
+  async function openAnim() {
+    if (morphState !== 'idle') return;
+    const token = ++animToken;
+    morphState = 'opening';
+    clearRadiusTimer();
+
+    const rect = openBtn.getBoundingClientRect();
+    const bg = getButtonColor();
+    const surface = getSurfaceColor();
+    const radius = getButtonRadius(rect);
+    const el = morphLayer;
+
+    el.style.transition = 'none';
+    el.style.display = 'block';
+    el.style.background = bg;
+    el.style.opacity = '0';
+    setRect(el, rect, radius);
+    void el.offsetWidth;
+
+    await new Promise((r) => setTimeout(r, prefersReducedMotion ? 0 : 100));
+    if (token !== animToken) return;
+
+    el.classList.add('visible');
+    el.style.transition = `opacity ${FADE}ms ease`;
+    el.style.opacity = '1';
+    await new Promise((r) => setTimeout(r, FADE));
+    if (token !== animToken) return;
+
+    el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY) + `, background-color ${DURATION}ms ${EASING}`;
+    requestAnimationFrame(() => {
+      if (token !== animToken) return;
+      el.style.left = '0px';
+      el.style.top = '0px';
+      el.style.width = window.innerWidth + 'px';
+      el.style.height = window.innerHeight + 'px';
+      el.style.borderRadius = RADIUS_HOLD + 'px';
+      el.style.background = surface;
+    });
+
+    radiusTimer = setTimeout(() => {
+      if (token !== animToken) return;
+      el.style.transition = radiusTransition(0);
+      el.style.borderRadius = '0px';
+    }, DURATION - RADIUS_LEAD);
+
+    await waitSize(el);
+    if (token !== animToken) return;
+
+    morphState = 'open';
+    document.body.classList.add('font-page-open');
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => { if (token === animToken) overlay.classList.add('content-in'); });
+
+    el.style.transition = 'opacity 280ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      if (token !== animToken) return;
+      el.style.display = 'none';
+      el.classList.remove('visible');
+    }, 300);
+  }
+
+  async function closeAnim() {
+    if (morphState !== 'open') return;
+    const token = ++animToken;
+    morphState = 'closing';
+    clearRadiusTimer();
+
+    document.body.classList.remove('font-page-open');
+    overlay.classList.remove('content-in');
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+
+    const rect = openBtn.getBoundingClientRect();
+    const bg = getButtonColor();
+    const surface = getSurfaceColor();
+    const radius = getButtonRadius(rect);
+    const el = morphLayer;
+
+    el.style.transition = 'none';
+    el.style.display = 'block';
+    el.style.background = surface;
+    el.style.opacity = '1';
+    el.style.left = '0px';
+    el.style.top = '0px';
+    el.style.width = window.innerWidth + 'px';
+    el.style.height = window.innerHeight + 'px';
+    el.style.borderRadius = '0px';
+    void el.offsetWidth;
+
+    el.classList.add('visible');
+    el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
+      + `, background-color ${DURATION * 2}ms ${EASING}`;
+    requestAnimationFrame(() => {
+      if (token !== animToken) return;
+      el.style.left = rect.left + 'px';
+      el.style.top = rect.top + 'px';
+      el.style.width = rect.width + 'px';
+      el.style.height = rect.height + 'px';
+      el.style.borderRadius = radius;
+      el.style.background = bg;
+    });
+
+    await waitSize(el);
+    if (token !== animToken) return;
+
+    el.style.transition = 'opacity 180ms ease';
+    el.style.opacity = '0';
+    await new Promise((r) => setTimeout(r, 200));
+    if (token !== animToken) return;
+
+    el.style.display = 'none';
+    el.style.transition = '';
+    el.classList.remove('visible');
+    morphState = 'idle';
+  }
+
+  openBtn.addEventListener('click', openAnim);
+  closeBtn.addEventListener('click', closeAnim);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && morphState === 'open') closeAnim();
+  });
+})();
+
+/* =========================================================
+   焦点放大模式
+   ========================================================= */
+const focusMode = {
+  active: false,
+  main: 'clock',
+};
+
+const focusOverlay = document.getElementById('focusOverlay');
+const focusCloseBtn = document.getElementById('focusCloseBtn');
+const focusHint = document.getElementById('focusHint');
+const focusPip = document.getElementById('focusPip');
+
+const focusClockView = document.getElementById('focusClockView');
+const focusCdView = document.getElementById('focusCdView');
+const focusPipClockView = document.getElementById('focusPipClockView');
+const focusPipCdView = document.getElementById('focusPipCdView');
+
+function renderFocus(now) {
+  const d = new Date(now);
+  document.getElementById('focusClockTime').textContent =
+    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  document.getElementById('focusClockDate').textContent =
+    d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
+    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+
+  const exam = getActiveExam(now);
+  const cdLabel = document.getElementById('focusCdLabel');
+  const cdName = document.getElementById('focusCdName');
+  const cdA = document.getElementById('focusCdA');
+  const cdB = document.getElementById('focusCdB');
+  const cdC = document.getElementById('focusCdC');
+  const cdD = document.getElementById('focusCdD');
+  const cdStatus = document.getElementById('focusStatus');
+
+  if (!exam) {
+    cdLabel.textContent = '倒计时';
+    cdName.textContent = '暂无考试安排';
+    cdName.className = 'focus-cd-name waiting';
+    cdA.textContent = '0'; cdB.textContent = '00';
+    cdC.textContent = '00'; cdD.textContent = '00';
+    cdStatus.textContent = '请添加考试';
+    cdStatus.className = 'focus-status';
+    [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num');
+  } else {
+    const phase = getPhase(exam.startMs, exam.endMs, now);
+    cdName.textContent = exam.name;
+    cdName.className = 'focus-cd-name ' + phase;
+
+    if (phase === 'waiting') {
+      cdLabel.textContent = '距离考试开始';
+      const p = diffParts(exam.startMs - now);
+      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      [cdA, cdB, cdC, cdD].forEach(e => { e.className = 'focus-cd-num' + (urgent ? ' urgent' : ''); });
+      cdStatus.textContent = '倒计时中';
+      cdStatus.className = 'focus-status waiting';
+    } else if (phase === 'running') {
+      cdLabel.textContent = '考试进行中';
+      const p = diffParts(now - exam.startMs);
+      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+      [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num running');
+      cdStatus.textContent = '已开始，计时中';
+      cdStatus.className = 'focus-status running';
+    } else {
+      cdLabel.textContent = '考试已结束';
+      const p = diffParts(exam.endMs - exam.startMs);
+      cdA.textContent = p.days; cdB.textContent = pad(p.hrs);
+      cdC.textContent = pad(p.mins); cdD.textContent = pad(p.secs);
+      [cdA, cdB, cdC, cdD].forEach(e => e.className = 'focus-cd-num ended');
+      cdStatus.textContent = '已结束';
+      cdStatus.className = 'focus-status ended';
+    }
+  }
+
+  const pipClockTime = document.getElementById('focusPipClockTime');
+  const pipClockDate = document.getElementById('focusPipClockDate');
+  const pipLabel = document.getElementById('focusPipLabel');
+  const pipName = document.getElementById('focusPipName');
+  const pipCd = document.getElementById('focusPipCd');
+  const pipStatus = document.getElementById('focusPipStatus');
+
+  pipClockTime.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  pipClockDate.textContent = d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate());
+
+  if (!exam) {
+    pipLabel.textContent = '倒计时';
+    pipName.textContent = '暂无考试安排';
+    pipName.className = 'focus-pip-name waiting';
+    pipCd.textContent = '--:--:--';
+    pipCd.className = 'focus-pip-cd';
+    pipStatus.textContent = '';
+  } else {
+    const phase = getPhase(exam.startMs, exam.endMs, now);
+    pipLabel.textContent = '倒计时';
+    pipName.textContent = exam.name;
+    pipName.className = 'focus-pip-name ' + phase;
+
+    if (phase === 'waiting') {
+      const p = diffParts(exam.startMs - now);
+      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      const urgent = p.days === 0 && p.hrs === 0 && p.mins < 30;
+      pipCd.className = 'focus-pip-cd' + (urgent ? ' urgent' : '');
+      pipStatus.textContent = '倒计时中';
+    } else if (phase === 'running') {
+      const p = diffParts(now - exam.startMs);
+      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      pipCd.className = 'focus-pip-cd running';
+      pipStatus.textContent = '进行中';
+    } else {
+      const p = diffParts(exam.endMs - exam.startMs);
+      pipCd.textContent = pad(p.days) + '天 ' + pad(p.hrs) + ':' + pad(p.mins) + ':' + pad(p.secs);
+      pipCd.className = 'focus-pip-cd ended';
+      pipStatus.textContent = '已结束';
+    }
+  }
 }
 
-document.getElementById("openPlanBtn").addEventListener("click", () => showPage("plan"));
-document.getElementById("backBtn").addEventListener("click", () => showPage("dashboard"));
+function updateFocusLayout() {
+  const isClockMain = focusMode.main === 'clock';
+  focusClockView.style.display = isClockMain ? 'block' : 'none';
+  focusCdView.style.display = isClockMain ? 'none' : 'block';
+  focusPipClockView.style.display = isClockMain ? 'none' : 'block';
+  focusPipCdView.style.display = isClockMain ? 'block' : 'none';
+}
 
-// 添加考试
- document.getElementById("addBtn").addEventListener("click", () => {
-  const name  = document.getElementById("nameInput").value.trim();
-  const start = document.getElementById("startInput").value;
-  const end   = document.getElementById("endInput").value;
-  if (!name)  { alert("请输入科目名称"); return; }
-  if (!start) { alert("请选择开始时间"); return; }
-  if (!end)   { alert("请选择结束时间"); return; }
-  if (new Date(end).getTime() <= new Date(start).getTime()) {
-    alert("结束时间必须晚于开始时间");
+function enterFocus(mainView) {
+  if (focusMode.active) {
+    if (mainView !== focusMode.main) {
+      focusMode.main = mainView;
+      updateFocusLayout();
+      renderFocus(Date.now());
+    }
     return;
   }
+  focusMode.active = true;
+  focusMode.main = mainView;
+  document.body.classList.add('focus-mode');
+
+  updateFocusLayout();
+  renderFocus(Date.now());
+
+  focusOverlay.classList.add('active');
+  focusOverlay.setAttribute('aria-hidden', 'false');
+  focusPip.classList.add('active');
+  focusCloseBtn.classList.add('active');
+  focusHint.classList.add('active');
+}
+
+function exitFocus() {
+  if (!focusMode.active) return;
+  focusMode.active = false;
+  document.body.classList.remove('focus-mode');
+  focusOverlay.classList.remove('active');
+  focusOverlay.setAttribute('aria-hidden', 'true');
+  focusPip.classList.remove('active');
+  focusCloseBtn.classList.remove('active');
+  focusHint.classList.remove('active');
+}
+
+document.getElementById('nowTime').addEventListener('click', () => enterFocus('clock'));
+document.getElementById('cdRow').addEventListener('click', () => enterFocus('countdown'));
+
+focusPip.addEventListener('click', () => {
+  if (!focusMode.active) return;
+  focusMode.main = focusMode.main === 'clock' ? 'countdown' : 'clock';
+  updateFocusLayout();
+  renderFocus(Date.now());
+});
+
+focusClockView.addEventListener('click', () => {
+  if (!focusMode.active) return;
+  focusMode.main = 'countdown';
+  updateFocusLayout();
+  renderFocus(Date.now());
+});
+focusCdView.addEventListener('click', () => {
+  if (!focusMode.active) return;
+  focusMode.main = 'clock';
+  updateFocusLayout();
+  renderFocus(Date.now());
+});
+
+focusCloseBtn.addEventListener('click', exitFocus);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && focusMode.active) exitFocus();
+});
+
+focusOverlay.addEventListener('click', (e) => {
+  if (e.target === focusOverlay) exitFocus();
+});
+
+/* =========================================================
+   科目选择 & 自定义对话框【修复版】
+   ========================================================= */
+const subjectSelect = document.getElementById('subjectSelect');
+const customDialog = document.getElementById('customSubjectDialog');
+const customSubjectInput = document.getElementById('customSubjectInput');
+const customSubjectCancel = document.getElementById('customSubjectCancel');
+const customSubjectConfirm = document.getElementById('customSubjectConfirm');
+
+let lastSubjectValue = '语文';
+let pendingCustomSubject = null;
+
+subjectSelect.value = '语文';
+
+subjectSelect.addEventListener('change', (e) => {
+  const val = e.target.value;
+  if (val === '__custom__') {
+    pendingCustomSubject = null;
+    customSubjectInput.value = '';
+    // 原生mdui-select 用 open=false 关闭下拉，不能调用 .close()
+    subjectSelect.open = false;
+    // 加微小延时，避开动画/菜单的时序竞争（解决你之前dialog弹不出的联动问题）
+    setTimeout(() => {
+      customDialog.open = true;
+    }, 80);
+  } else {
+    lastSubjectValue = val;
+  }
+});
+
+
+customDialog.addEventListener('closed', () => {
+  if (pendingCustomSubject) {
+    let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
+    if (!customItem) {
+      customItem = document.createElement('mdui-menu-item');
+      customItem.setAttribute('value', '__custom_value__');
+      const customOption = subjectSelect.querySelector('mdui-menu-item[value="__custom__"]');
+      subjectSelect.insertBefore(customItem, customOption);
+    }
+    customItem.textContent = pendingCustomSubject;
+    subjectSelect.value = '__custom_value__';
+    lastSubjectValue = '__custom_value__';
+    pendingCustomSubject = null;
+  } else {
+    // 取消，回退到上一个合法选项
+    subjectSelect.value = lastSubjectValue;
+  }
+});
+
+customSubjectConfirm.addEventListener('click', () => {
+  const name = (customSubjectInput.value || '').trim();
+  if (!name) {
+    mdui.snackbar({ message: '请输入科目名称' });
+    return;
+  }
+  pendingCustomSubject = name;
+  customDialog.open = false;
+});
+
+customSubjectCancel.addEventListener('click', () => {
+  pendingCustomSubject = null;
+  customDialog.open = false;
+});
+
+customDialog.addEventListener('cancel', () => {
+  pendingCustomSubject = null;
+});
+
+function getSelectedSubject() {
+  const val = subjectSelect.value;
+  if (val === '__custom_value__') {
+    const item = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
+    return item ? item.textContent : '';
+  }
+  if (val === '__custom__' || !val) return '';
+  return val;
+}
+
+
+/* =========================================================
+   添加/删除考试
+   ========================================================= */
+document.getElementById('addBtn').addEventListener('click', () => {
+  const startEl = document.getElementById('startInput');
+  const endEl   = document.getElementById('endInput');
+
+  const name  = getSelectedSubject();
+  const start = startEl.value;
+  const end   = endEl.value;
+
+  if (!name)  { mdui.snackbar({ message: '请选择科目' }); return; }
+  if (!start) { mdui.snackbar({ message: '请选择开始时间' }); return; }
+  if (!end)   { mdui.snackbar({ message: '请选择结束时间' }); return; }
+  if (new Date(end).getTime() <= new Date(start).getTime()) {
+    mdui.snackbar({ message: '结束时间必须晚于开始时间' });
+    return;
+  }
+
   const list = getExams();
   list.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, start, end });
   saveExams(list);
-  document.getElementById("nameInput").value = "";
-  document.getElementById("startInput").value = "";
-  document.getElementById("endInput").value = "";
+
+  startEl.value = '';
+  endEl.value = '';
   render();
 });
 
-// 删除考试
- document.getElementById("examList").addEventListener("click", e => {
-  const id = e.target.dataset.id;
+document.getElementById('examList').addEventListener('click', (e) => {
+  const delBtn = e.target.closest('.del-btn');
+  if (!delBtn) return;
+  const id = delBtn.dataset.id;
   if (!id) return;
   saveExams(getExams().filter(x => x.id !== id));
   render();
 });
 
-setInterval(() => { updateClock(); render(); }, 1000);
+/* =========================================================
+   【新增】自定义科目持久化 + 自定义科目删除管理（DOM已写在HTML内，不再JS注入）
+   ========================================================= */
+const CUSTOM_SUBJECT_STORE_KEY = "exam_custom_subjects_v1";
+const persistCheck = document.getElementById("persistSubjectCheck");
+const delSelect = document.getElementById("delCustomSubjectSelect");
+
+// 读取本地存储的自定义科目集合
+function getStoredCustomSubjects() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_SUBJECT_STORE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+function saveStoredCustomSubjects(arr) {
+  localStorage.setItem(CUSTOM_SUBJECT_STORE_KEY, JSON.stringify(arr));
+}
+
+// 渲染删除下拉菜单
+function refreshDelSubjectSelect() {
+  const list = getStoredCustomSubjects();
+  delSelect.innerHTML = "";
+  // 逐个添加已保存科目
+  list.forEach(name => {
+    const mi = document.createElement('mdui-menu-item');
+    mi.value = name;
+    mi.textContent = name;
+    delSelect.appendChild(mi);
+  });
+  // 清除全部选项
+  const clearAllItem = document.createElement('mdui-menu-item');
+  clearAllItem.value = "__CLEAR_ALL__";
+  clearAllItem.textContent = "清除所有自定义科目";
+  delSelect.appendChild(clearAllItem);
+  // 无自定义科目时，清除全部置灰
+  clearAllItem.disabled = list.length === 0;
+}
+
+// 监听删除select变化
+delSelect.addEventListener('change', () => {
+  const val = delSelect.value;
+  if (!val) return;
+  const stored = getStoredCustomSubjects();
+  if (val === "__CLEAR_ALL__") {
+    saveStoredCustomSubjects([]);
+    // 清理主select里所有__custom_value__条目
+    subjectSelect.querySelectorAll('mdui-menu-item[value="__custom_value__"]').forEach(el => el.remove());
+    subjectSelect.value = lastSubjectValue;
+    mdui.snackbar({ message: "已清空全部保存的自定义科目" });
+  } else {
+    const newList = stored.filter(s => s !== val);
+    saveStoredCustomSubjects(newList);
+    // 移除主下拉里对应的自定义选项
+    subjectSelect.querySelectorAll('mdui-menu-item[value="__custom_value__"]').forEach(el => {
+      if(el.textContent.trim() === val.trim()) el.remove();
+    });
+    mdui.snackbar({ message: `已删除科目：${val}` });
+  }
+  delSelect.value = "";
+  refreshDelSubjectSelect();
+});
+
+// 打开dialog时刷新下拉列表
+customDialog.addEventListener('open', () => {
+  refreshDelSubjectSelect();
+});
+
+// 覆盖原有确认按钮事件
+customSubjectConfirm.onclick = null;
+customSubjectConfirm.addEventListener('click', () => {
+  const name = (customSubjectInput.value || '').trim();
+  if (!name) {
+    mdui.snackbar({ message: '请输入科目名称' });
+    return;
+  }
+  pendingCustomSubject = name;
+  // 如果勾选保存，写入localStorage（去重）
+  if (persistCheck.checked) {
+    let stored = getStoredCustomSubjects();
+    if (!stored.includes(name)) {
+      stored.push(name);
+      saveStoredCustomSubjects(stored);
+    }
+  }
+  customDialog.open = false;
+});
+
+// Dialog关闭回调
+customDialog.removeEventListener('closed', function(){});
+customDialog.addEventListener('closed', () => {
+  // 原有逻辑：临时自定义科目
+  if (pendingCustomSubject) {
+    let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
+    if (!customItem) {
+      customItem = document.createElement('mdui-menu-item');
+      customItem.setAttribute('value', '__custom_value__');
+      const customOption = subjectSelect.querySelector('mdui-menu-item[value="__custom__"]');
+      subjectSelect.insertBefore(customItem, customOption);
+    }
+    customItem.textContent = pendingCustomSubject;
+    subjectSelect.value = '__custom_value__';
+    lastSubjectValue = '__custom_value__';
+    pendingCustomSubject = null;
+  } else {
+    subjectSelect.value = lastSubjectValue;
+  }
+
+  // 关闭Dialog后，把localStorage里面所有持久化科目批量同步进主下拉（去重）
+  const stored = getStoredCustomSubjects();
+  const customMarkerOption = subjectSelect.querySelector('mdui-menu-item[value="__custom__"]');
+  stored.forEach(subName => {
+    const exist = Array.from(subjectSelect.querySelectorAll('mdui-menu-item[value="__custom_value__"]')).some(el => el.textContent.trim() === subName.trim());
+    if (!exist) {
+      const newMi = document.createElement('mdui-menu-item');
+      newMi.value = "__custom_value__";
+      newMi.textContent = subName;
+      subjectSelect.insertBefore(newMi, customMarkerOption);
+    }
+  });
+
+  // 关闭弹窗重置控件状态
+  customSubjectInput.value = "";
+  persistCheck.checked = false;
+});
+
+// 页面初始化加载持久化科目
+function loadPersistSubjectOnBoot() {
+  const stored = getStoredCustomSubjects();
+  const customMarkerOption = subjectSelect.querySelector('mdui-menu-item[value="__custom__"]');
+  stored.forEach(subName => {
+    const exist = Array.from(subjectSelect.querySelectorAll('mdui-menu-item[value="__custom_value__"]')).some(el => el.textContent.trim() === subName.trim());
+    if (!exist) {
+      const newMi = document.createElement('mdui-menu-item');
+      newMi.value = "__custom_value__";
+      newMi.textContent = subName;
+      subjectSelect.insertBefore(newMi, customMarkerOption);
+    }
+  });
+}
+loadPersistSubjectOnBoot();
+
+
+
+
+/* =========================================================
+   定时更新
+   ========================================================= */
+setInterval(() => {
+  updateClock();
+  render();
+}, 1000);
 updateClock();
 render();
+
+if (window.customElements && customElements.whenDefined) {
+  Promise.allSettled([
+    customElements.whenDefined('mdui-button'),
+    customElements.whenDefined('mdui-button-icon'),
+    customElements.whenDefined('mdui-text-field'),
+    customElements.whenDefined('mdui-select'),
+    customElements.whenDefined('mdui-menu-item'),
+    customElements.whenDefined('mdui-dialog'),
+    customElements.whenDefined('mdui-top-app-bar')
+  ]).then(() => {
+    requestAnimationFrame(() => render());
+  });
+}
 </script>
 </body>
 </html>
