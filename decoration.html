@@ -19,6 +19,12 @@
   font-display: swap;
 }
 
+/* 横屏首页大框尺寸（仅横屏生效，竖屏宽度保持不变） */
+:root {
+  --home-landscape-width: 1120px;
+  --home-landscape-height: 560px;
+}
+
 /* ========== 基础重置 ========== */
 * { box-sizing: border-box; }
 html, body {
@@ -61,7 +67,8 @@ body.focus-mode { overflow: hidden; }
   gap: 2px;
   margin-right: 6px;
 }
-/* 顶栏左上角 logo：1:1 自适应 */
+/* 顶栏左上角 logo：1:1 自适应
+   相对下移 5px，使中心与右侧“切换深浅色”按钮中心平齐 */
 .top-bar-logo {
   width: 30px;
   height: 30px;
@@ -69,6 +76,8 @@ body.focus-mode { overflow: hidden; }
   object-fit: contain;
   margin-left: 2px;
   flex: 0 0 auto;
+  position: relative;
+  top: 5px;
 }
 
 /* ========== 主页面布局 ========== */
@@ -102,6 +111,7 @@ body.view-settings .app {
   text-align: center;
   color: rgb(var(--mdui-color-on-surface-variant));
   margin-bottom: 6px;
+  white-space: nowrap;
 }
 
 /* =========================================================
@@ -460,6 +470,14 @@ body.view-settings .app {
   color: rgb(var(--mdui-color-on-surface-variant));
   margin-top: 8px;
 }
+/* 横屏且空间足够时，只把焦点视图里的两个指针表盘（Material-You 花瓣 /
+   标准 SVG 圆盘）等比放大到 1.5 倍；数字时间与日期保持原本 1 倍。
+   用 zoom 而非 transform：表盘与指针是固定 px 的子元素，zoom 会把它们
+   连同容器一起等比放大且参与布局占位，数字时钟自然下移，不会重叠。 */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 640px) {
+  #focusClockView > .analog-clock,
+  #focusClockView > .round-clock-wrap { zoom: 1.5; }
+}
 
 /* 焦点模式倒计时 */
 .focus-cd-label {
@@ -638,6 +656,59 @@ body.view-settings .app {
   transition: opacity .25s .3s, visibility 0s linear 0s;
 }
 
+/* 竖屏（<700px）不调节横屏尺寸，隐藏该设置卡片；滑块逻辑仍保留，横屏时恢复显示 */
+@media (max-width: 699.98px) {
+  #layoutSettingsCard { display: none; }
+}
+
+/* =========================================================
+   横屏 / 宽屏：首页左右两栏排布（参照 exam-dashboard.html）
+   - 左栏：时钟 + 数字时间；右栏：状态与倒计时
+   - 窄屏（<700px）仍保持原有的竖向单栏排版
+   ========================================================= */
+@media (min-width: 700px) {
+  .app { max-width: var(--home-landscape-width); }
+  .app > br { display: none; }   /* 宽屏省去竖向留白 */
+  /* 用 .home-card 而非 #dashboardPage .card，便于预览浮层克隆同一套横屏样式 */
+  .home-card {
+    width: 100%;
+    min-height: var(--home-landscape-height);
+    margin-bottom: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 32px;
+    align-content: center;
+    padding: 28px 40px;
+  }
+  .home-card .title {
+    grid-column: 1 / -1;
+    display: block;
+    width: 100%;
+    margin: 0 0 12px;
+    transform: none;
+    text-align: center;
+  }
+  .home-card .clock-panel,
+  .home-card .countdown-panel {
+    align-self: center;
+    min-width: 0;
+  }
+  .home-card .clock-panel { text-align: center; }
+  .home-card .round-clock-wrap { margin: 0 auto 6px; }
+  .home-card .round-clock { width: min(100%, 320px); }
+  .home-card .now-time {
+    font-size: clamp(38px, 5vw, 56px);
+    margin-top: 4px;
+  }
+  .home-card .now-date { margin-top: 0; margin-bottom: 0; }
+  .home-card .divider { display: none; }
+  .home-card .main-label { font-size: 16px; }
+  .home-card .main-name { font-size: 28px; min-height: 38px; }
+  .home-card .cd-unit { max-width: 150px; padding: 16px 8px 12px; }
+  .home-card .cd-num { font-size: clamp(26px, 4vw, 44px); }
+  .home-card .status { font-size: 15px; margin-top: 14px; }
+}
+
 @media (max-width: 480px) {
   body { padding: 116px 12px 80px; }
   .card { padding: 22px 18px 18px; }
@@ -725,8 +796,11 @@ mdui-fab#playFab { margin: 0 4px 4px 0; }
    ========================================================= */
 
 .settings-page-overlay {
-  /* 非设置态：脱离文档流、隐藏、淡出（visibility 延迟到淡出结束） */
-  position: absolute;
+  /* 非设置态：脱离文档流、隐藏、淡出（visibility 延迟到淡出结束）
+     用 fixed 而非 absolute：absolute 元素仍会撑开 body 的滚动高度，
+     设置页内容有 1400+px，导致首页下方出现大片可滚动空白。
+     fixed 完全不参与文档高度计算，同时保留 opacity 淡入淡出。 */
+  position: fixed;
   top: 124px; left: 0; right: 0;
   z-index: 800;                /* 低于顶栏(900)，让顶栏覆盖在本页之上 */
   visibility: hidden;
@@ -833,45 +907,45 @@ body.view-settings #dashboardPage {
   background: rgb(var(--mdui-color-primary));
 }
 .widget-preview {
-  border-radius: 18px;
-  padding: 18px 16px;
+  border-radius: 28px;
+  padding: 28px;
   background: rgb(var(--mdui-color-surface-container-highest));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  min-height: 130px;
+  gap: 16px;
+  min-height: 216px;
   justify-content: center;
   overflow: hidden;
 }
 .widget-preview .wp-item { text-align: center; max-width: 100%; }
 .wp-clock {
-  font-size: 34px;
+  font-size: 56px;
   font-variant-numeric: tabular-nums;
   font-family: 'XiaolaiMono', 'Consolas', monospace;
   color: rgb(var(--mdui-color-on-surface));
   line-height: 1.1;
 }
 .wp-subject {
-  font-size: 22px; font-weight: 700;
+  font-size: 36px; font-weight: 700;
   color: rgb(var(--mdui-color-primary));
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .wp-range, .wp-next {
-  font-size: 13px;
+  font-size: 20px;
   color: rgb(var(--mdui-color-on-surface-variant));
   font-variant-numeric: tabular-nums;
 }
 .wp-next b { color: rgb(var(--mdui-color-on-surface)); font-weight: 600; }
-.wp-empty { font-size: 13px; color: rgb(var(--mdui-color-on-surface-variant)); }
+.wp-empty { font-size: 20px; color: rgb(var(--mdui-color-on-surface-variant)); }
 
 /* 焦点大界面里由 chips 控制的部件区 */
 .focus-widgets {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 28px;
   max-width: 100%;
 }
 .focus-widgets .fw-item {
@@ -880,13 +954,13 @@ body.view-settings #dashboardPage {
   text-align: center;
 }
 .focus-widgets .fw-subject {
-  font-size: clamp(16px, 2.6vw, 24px);
+  font-size: clamp(28px, 4.316vw, 40px);
   font-weight: 700;
   color: rgb(var(--mdui-color-primary));
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .focus-widgets .fw-range, .focus-widgets .fw-next, .focus-widgets .fw-clock {
-  font-size: clamp(12px, 1.8vw, 16px);
+  font-size: clamp(20px, 2.988vw, 28px);
   color: rgb(var(--mdui-color-on-surface-variant));
 }
 .focus-widgets .fw-next b { color: rgb(var(--mdui-color-on-surface)); }
@@ -911,8 +985,14 @@ body.view-settings #dashboardPage {
 
 /* ---- 应用到首页卡片内的各类块：保留文字，外层套骨架底色 ---- */
 .card { background: rgb(var(--mdui-color-surface-container)); }
+/* 用 fit-content + auto margin 居中，避免 margin-left:50% 把可用宽度压到一半导致窄屏换行 */
 .title {
-  display: inline-block; padding: 4px 18px; margin-left: 50%; transform: translateX(-50%);
+  display: block;
+  width: fit-content;
+  max-width: calc(100% - 8px);
+  margin: 0 auto 6px;
+  padding: 4px 18px;
+  white-space: nowrap;
   background: rgb(var(--mdui-color-surface-container-highest)); border-radius: var(--skel-radius);
 }
 .now-time {
@@ -1024,6 +1104,151 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
    不要单独放大容器——花瓣 SVG 会跟着放大，但指针是固定 px 尺寸，
    比例会错位（指针显短、秒针圆点脱离），所以此处不做任何尺寸覆盖。 */
 
+/* =========================================================
+   标准样式时钟（移植自 exam-dashboard.html）
+   - 刻度、数字、日期与指针均为 SVG，随容器等比缩放
+   - 表盘数字与日期数字统一使用 XiaolaiMono，与倒计时数字字体一致
+   ========================================================= */
+.round-clock-wrap {
+  display: none;                 /* 由时钟样式设置控制显隐 */
+  justify-content: center;
+  margin: 0 auto 6px;
+  cursor: pointer;
+}
+.round-clock-wrap.enabled { display: flex; }
+#standardClock.enabled { cursor: pointer; }
+.round-clock {
+  width: min(260px, 58vw);
+  aspect-ratio: 1;
+  display: block;
+  border-radius: 50%;
+  background: rgb(var(--mdui-color-surface-container));
+  filter: drop-shadow(0 8px 14px rgb(var(--mdui-color-on-surface) / .10));
+}
+.clock-face-border {
+  fill: rgb(var(--mdui-color-surface-container));
+  stroke: rgb(var(--mdui-color-outline));
+  stroke-width: 5;
+}
+.clock-tick { stroke: rgb(var(--mdui-color-outline)); stroke-width: 1.2; stroke-linecap: round; }
+.clock-tick.major { stroke: rgb(var(--mdui-color-on-surface-variant)); stroke-width: 1.8; }
+.clock-number {
+  fill: rgb(var(--mdui-color-on-surface));
+  font-size: 32px;
+  font-weight: 400;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.clock-date {
+  fill: rgb(var(--mdui-color-on-surface-variant));
+  font-size: 18px;
+  font-weight: 400;
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.clock-hour { stroke: rgb(var(--mdui-color-on-surface)); stroke-width: 7; stroke-linecap: round; }
+.clock-minute { stroke: rgb(var(--mdui-color-on-surface)); stroke-width: 5; stroke-linecap: round; }
+.clock-second { stroke: rgb(var(--mdui-color-error)); stroke-width: 2; stroke-linecap: round; }
+.clock-pin-outer {
+  fill: rgb(var(--mdui-color-surface-container));
+  stroke: rgb(var(--mdui-color-error));
+  stroke-width: 2;
+}
+/* 时钟样式分段按钮：长标签缩小字号，避免换行 */
+.clock-style-segmented mdui-segmented-button {
+  --mdui-comp-segmented-button-label-font-size: 12px;
+}
+
+/* =========================================================
+   横屏首页尺寸调节 + 拖动预览浮层
+   浮层弹出/淡出效果移植自 prompt.html 的 .home-preview-float
+   ========================================================= */
+.layout-slider-row {
+  margin: 18px 0 24px;
+}
+.layout-slider-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-bottom: 8px;
+}
+.layout-slider-label b {
+  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgb(var(--mdui-color-on-surface));
+}
+.layout-slider-row mdui-slider {
+  display: block;
+  width: 100%;
+}
+
+/* 拖动时以 100% 实际尺寸短暂预览当前横屏首页 */
+.layout-preview-float {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 99990;
+  width: min(94vw, 1400px);
+  height: min(84vh, 800px);
+  transform: translate(-50%, -50%) scale(0.92);
+  border-radius: 20px;
+  overflow: auto;
+  background: rgb(var(--mdui-color-surface-container-low) / .96);
+  box-shadow: 0 18px 60px rgba(0,0,0,.28), 0 2px 8px rgba(0,0,0,.12);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0s linear 260ms;
+}
+.layout-preview-float.show {
+  opacity: 0.94;
+  transform: translate(-50%, -50%) scale(1);
+  visibility: visible;
+  transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0s linear 0s;
+}
+.layout-preview-float .preview-badge {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 0 0 12px 0;
+  font-size: 12px;
+  letter-spacing: .1em;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  background: rgb(var(--mdui-color-surface-container-highest) / .9);
+  pointer-events: none;
+}
+.layout-preview-float.show .preview-badge { opacity: .7; }
+.layout-preview-body {
+  display: flex;
+  align-items: center;
+  justify-content: safe center;   /* 卡片超宽时仍可滚动到两侧 */
+  min-height: calc(100% - 30px);
+  padding: 16px;
+  box-sizing: border-box;
+}
+/* 克隆出来的卡片保持 100% 实际尺寸，不做缩放 */
+.layout-preview-float .home-card {
+  flex: 0 0 auto;
+  margin: 0;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+}
+
 </style>
 </head>
 <body>
@@ -1042,9 +1267,10 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
   <br><br>
   <!-- ==================== 主页（倒计时） ==================== -->
   <main id="dashboardPage" class="page active">
-    <div class="card">
+    <div class="card home-card">
       <div class="title">考试倒计时时钟</div>
-      <!-- 指针式时钟（默认启用，设置页可关闭） -->
+      <div class="clock-panel">
+      <!-- 指针式时钟（由时钟样式设置控制显隐） -->
       <div class="analog-clock" id="analogClock" aria-hidden="true">
         <svg class="ac-bg" viewBox="0 0 461 461" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true">
           <path class="ac-petal" clip-rule="evenodd" fill-rule="evenodd" d="M93.6379 63.9405C89.7543 78.4344 78.4333 89.7554 63.9394 93.639L56.4989 95.6327C34.0934 101.636 20.7969 124.666 26.8005 147.072L28.7201 154.236C32.6038 168.73 28.46 184.195 17.8497 194.805L12.3015 200.353C-4.1005 216.755 -4.10051 243.348 12.3015 259.75L17.9236 265.372C28.5338 275.983 32.6776 291.447 28.794 305.941L26.8004 313.382C20.7968 335.787 34.0933 358.817 56.4989 364.821L63.9395 366.815C78.4334 370.698 89.7544 382.019 93.638 396.513L95.6322 403.956C101.636 426.361 124.666 439.658 147.071 433.654L154.513 431.66C169.007 427.777 184.472 431.92 195.082 442.531L200.353 447.802C216.755 464.204 243.348 464.204 259.75 447.802L265.097 442.455C275.707 431.845 291.172 427.701 305.666 431.585L313.383 433.653C335.788 439.656 358.818 426.36 364.822 403.954L366.815 396.515C370.699 382.021 382.02 370.7 396.514 366.816L403.955 364.822C426.361 358.819 439.657 335.789 433.654 313.383L431.586 305.665C427.702 291.172 431.846 275.707 442.456 265.096L447.802 259.75C464.204 243.348 464.204 216.755 447.802 200.353L442.53 195.081C431.92 184.471 427.776 169.006 431.66 154.512L433.654 147.071C439.657 124.665 426.361 101.635 403.955 95.6312L396.514 93.6373C382.02 89.7537 370.699 78.4327 366.815 63.9389L364.822 56.4994C358.818 34.0938 335.788 20.7974 313.383 26.8009L305.942 28.7946C291.448 32.6782 275.983 28.5345 265.373 17.9242L259.75 12.3015C243.348 -4.10051 216.755 -4.1005 200.353 12.3015L194.806 17.8491C184.196 28.4593 168.731 32.6031 154.237 28.7195L147.071 26.7995C124.666 20.7959 101.636 34.0924 95.6322 56.498L93.6379 63.9405Z"/>
@@ -1056,8 +1282,25 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
         </div>
         <div class="ac-pin"></div>
       </div>
+      <!-- 标准样式时钟（移植自 exam-dashboard.html，默认显示） -->
+      <div class="round-clock-wrap" id="standardClock" title="点击放大">
+        <svg class="round-clock" id="roundClock" viewBox="0 0 400 400" role="img" aria-label="圆形实时时钟">
+          <circle class="clock-face-border" cx="200" cy="200" r="186"></circle>
+          <g id="clockTicks" class="clock-ticks"></g>
+          <g id="clockNumbers" class="clock-numbers"></g>
+          <text class="clock-date" id="clockDate" x="200" y="256">----/--/-- 日</text>
+          <g id="clockHands">
+            <line class="clock-hour" x1="200" y1="200" x2="200" y2="118"></line>
+            <line class="clock-minute" x1="200" y1="200" x2="200" y2="78"></line>
+            <line class="clock-second" x1="200" y1="218" x2="200" y2="58"></line>
+            <circle class="clock-pin-outer" cx="200" cy="200" r="7"></circle>
+          </g>
+        </svg>
+      </div>
       <div class="now-time" id="nowTime" title="点击放大">--:--:--</div>
       <div class="now-date" id="nowDate">----/--/--</div>
+      </div>
+      <div class="countdown-panel">
       <div class="divider"></div>
       <div class="main-label" id="mainLabel">当前状态</div>
       <div class="main-name waiting" id="mainName">暂无考试安排</div>
@@ -1071,6 +1314,7 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
       <div class="exam-progress-wrap">
         <div class="progress-caption"><span>考试进度</span><b id="examProgressText">0%</b></div>
         <mdui-linear-progress id="examProgress" value="0"></mdui-linear-progress>
+      </div>
       </div>
     </div>
   </main>
@@ -1223,19 +1467,35 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
         </div>
       </section>
 
-      <section class="card" aria-labelledby="analogSettingsTitle">
-        <h2 class="list-title setting-title" id="analogSettingsTitle"><mdui-icon name="schedule"></mdui-icon>指针式时钟</h2>
-        <p class="settings-desc">在首页数字时钟上方显示指针式时钟。</p>
-        <mdui-switch id="analogClockSwitch" aria-label="启用指针式时钟"></mdui-switch>
+      <section class="card" aria-labelledby="clockStyleSettingsTitle">
+        <h2 class="list-title setting-title" id="clockStyleSettingsTitle"><mdui-icon name="schedule"></mdui-icon>时钟样式</h2>
+        <p class="settings-desc">选择首页与大时间界面显示的指针时钟样式，默认使用标准样式。</p>
+        <mdui-segmented-button-group id="clockStyleSegmented" class="theme-segmented clock-style-segmented" selects="single" full-width>
+          <mdui-segmented-button value="materialyou" icon="blur_on">Material-You 样式</mdui-segmented-button>
+          <mdui-segmented-button value="standard" icon="schedule">标准样式</mdui-segmented-button>
+        </mdui-segmented-button-group>
+      </section>
+
+      <section class="card" id="layoutSettingsCard" aria-labelledby="layoutSettingsTitle">
+        <h2 class="list-title setting-title" id="layoutSettingsTitle"><mdui-icon name="crop_landscape"></mdui-icon>横屏首页尺寸</h2>
+        <p class="settings-desc">仅调节横屏时首页大框的长宽；竖屏宽度保持不变。拖动滑块时会以实际大小短暂弹出预览。</p>
+        <div class="layout-slider-row">
+          <div class="layout-slider-label"><span>卡片宽度</span><b id="homeWidthValue">1120 px</b></div>
+          <mdui-slider id="homeWidthSlider" min="700" max="1600" step="20" value="1120" labeled></mdui-slider>
+        </div>
+        <div class="layout-slider-row">
+          <div class="layout-slider-label"><span>卡片高度</span><b id="homeHeightValue">560 px</b></div>
+          <mdui-slider id="homeHeightSlider" min="420" max="1000" step="20" value="560" labeled></mdui-slider>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="widgetSettingsTitle">
         <h2 class="list-title setting-title" id="widgetSettingsTitle"><mdui-icon name="widgets"></mdui-icon>大时间界面小部件</h2>
         <p class="settings-desc">勾选要在放大界面中显示的内容，下方为实时预览。</p>
         <div class="widget-chips" id="widgetChips">
-          <mdui-chip selectable filter data-widget="subject" selected>当前科目</mdui-chip>
+          <mdui-chip selectable filter data-widget="subject">当前科目</mdui-chip>
           <mdui-chip selectable filter data-widget="range" selected>考试时间段</mdui-chip>
-          <mdui-chip selectable filter data-widget="next" selected>下一科目</mdui-chip>
+          <mdui-chip selectable filter data-widget="next">下一科目</mdui-chip>
           <mdui-chip selectable filter data-widget="clock" selected>当前时间</mdui-chip>
         </div>
         <div class="preview-caption">效果预览</div>
@@ -1258,6 +1518,12 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
 </mdui-dialog>
 
 <div id="morphLayer"></div>
+
+<!-- 拖动尺寸滑块时的 100% 实际大小预览浮层 -->
+<div class="layout-preview-float" id="layoutPreviewFloat" aria-hidden="true">
+  <div class="preview-badge">预览 · 100%</div>
+  <div class="layout-preview-body" id="layoutPreviewBody"></div>
+</div>
 
 <script>
 /* =========================================================
@@ -1391,46 +1657,89 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
 })();
 
 /* =========================================================
-   指针式时钟（取自 Material You NewTab）
-   - 开关控制显隐，默认关闭，localStorage 持久化
-   - 首页与大时间界面（焦点时钟视图）同步展示，统一驱动
-   - 时/分/秒按本地时间角度旋转
+   时钟样式（Material-You 样式 / 标准样式）
+   - 设置页分段按钮切换，默认标准样式，localStorage 持久化
+   - 首页与大时间界面（焦点时钟视图）同步展示同一种样式
+   - Material-You：花瓣 + CSS 指针；标准样式：SVG 表盘 + 刻度/数字/指针
    ========================================================= */
-(function initAnalogClock() {
-  const KEY = 'analog-clock-enabled';
-  const sw = document.getElementById('analogClockSwitch');
-  const mainClock = document.getElementById('analogClock');
-  if (!sw || !mainClock) return;
+(function initClockStyle() {
+  const KEY = 'clock-style';
+  const DEFAULT = 'standard';
+  const seg = document.getElementById('clockStyleSegmented');
+  const homeAnalog = document.getElementById('analogClock');
+  const homeStandard = document.getElementById('standardClock');
+  if (!seg || !homeAnalog || !homeStandard) return;
 
-  // 克隆一份到大时间界面（焦点时钟视图），去掉重复 id，避免 id 冲突
+  const pad2 = n => String(n).padStart(2, '0');
+
+  // 标准样式：生成 60 格刻度与 12 个数字（先初始化首页，再克隆到焦点视图）
+  function initFace(svg) {
+    const ticks = svg.querySelector('.clock-ticks');
+    const numbers = svg.querySelector('.clock-numbers');
+    if (ticks && !ticks.childNodes.length) {
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6 * Math.PI / 180;
+        const major = i % 5 === 0;
+        const outer = 174;
+        const inner = major ? 153 : 166;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', 200 + Math.sin(angle) * inner);
+        line.setAttribute('y1', 200 - Math.cos(angle) * inner);
+        line.setAttribute('x2', 200 + Math.sin(angle) * outer);
+        line.setAttribute('y2', 200 - Math.cos(angle) * outer);
+        line.setAttribute('class', 'clock-tick' + (major ? ' major' : ''));
+        ticks.appendChild(line);
+      }
+    }
+    if (numbers && !numbers.childNodes.length) {
+      for (let n = 1; n <= 12; n++) {
+        const angle = n * 30 * Math.PI / 180;
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', 200 + Math.sin(angle) * 132);
+        text.setAttribute('y', 200 - Math.cos(angle) * 132);
+        text.setAttribute('class', 'clock-number');
+        text.textContent = n;
+        numbers.appendChild(text);
+      }
+    }
+  }
+  document.querySelectorAll('.round-clock').forEach(initFace);
+
+  // 两种时钟各克隆一份到焦点视图，由样式切换决定显示哪一个（去掉重复 id）
   const focusClockView = document.getElementById('focusClockView');
-  if (focusClockView && !focusClockView.querySelector('.analog-clock')) {
-    const clone = mainClock.cloneNode(true);
-    clone.removeAttribute('id');
-    clone.setAttribute('aria-hidden', 'true');
-    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-    focusClockView.insertBefore(clone, focusClockView.firstChild);
+  if (focusClockView) {
+    [[homeAnalog, 'analog-clock'], [homeStandard, 'round-clock-wrap']].forEach(([src, cls]) => {
+      if (focusClockView.querySelector('.' + cls)) return;
+      const clone = src.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.setAttribute('aria-hidden', 'true');
+      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      focusClockView.insertBefore(clone, focusClockView.firstChild);
+    });
   }
 
-  // 所有指针时钟实例：{ root, hour, minute, second }
-  const clocks = Array.from(document.querySelectorAll('.analog-clock')).map(root => ({
+  // Material-You 指针实例
+  const analog = Array.from(document.querySelectorAll('.analog-clock')).map(root => ({
     root,
     hour: root.querySelector('.ac-hour'),
     minute: root.querySelector('.ac-minute'),
     second: root.querySelector('.ac-second'),
   })).filter(c => c.hour && c.minute && c.second);
-  if (!clocks.length) return;
+  // 标准样式指针与日期实例
+  const standard = Array.from(document.querySelectorAll('.round-clock-wrap')).map(root => ({
+    root,
+    hour: root.querySelector('.clock-hour'),
+    minute: root.querySelector('.clock-minute'),
+    second: root.querySelector('.clock-second'),
+    date: root.querySelector('.clock-date'),
+  })).filter(c => c.hour && c.minute && c.second && c.date);
 
   let timerId = null;
-  let baseTime = null;            // 基准时刻（连续累计角度用）
+  let baseTime = null;            // Material-You 基准时刻（连续累计角度用）
   let baseSec = 0, baseMin = 0, baseHour = 0;
+  let rafId = null;               // 标准样式平滑秒针动画
 
-  function getEnabled() {
-    // 默认启用：只有用户明确关闭（'false'）时才停用
-    try { return localStorage.getItem(KEY) !== 'false'; } catch { return true; }
-  }
-
-  function tick() {
+  function tickAnalog() {
     const now = new Date();
     // 首次（或重新启用）时记录基准角度，之后按真实经过时间连续累加，
     // 跨 59→0 秒/59→0 分/12→1 时都不会逆时针跳回，而是继续顺时针转。
@@ -1444,48 +1753,182 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
       baseHour = (h % 12) * 30 + m / 2;   // 30°/时 + 分微调
     }
     const elapsed = (now.getTime() - baseTime) / 1000;
-    const secDeg = baseSec + Math.floor(elapsed) * 6;  // 秒针：每秒递进一格(6°)，不再连续单调移动
-    const minDeg = baseMin + elapsed * 0.1;      // 分针：0.1°/秒(=6°/分)
-    const hourDeg = baseHour + elapsed / 120;    // 时针：1/120°/秒(=30°/时)
-    clocks.forEach(c => {
+    const secDeg = baseSec + Math.floor(elapsed) * 6;  // 秒针：每秒递进一格(6°)
+    const minDeg = baseMin + elapsed * 0.1;            // 分针：0.1°/秒(=6°/分)
+    const hourDeg = baseHour + elapsed / 120;          // 时针：1/120°/秒(=30°/时)
+    analog.forEach(c => {
       c.second.style.transform = 'rotate(' + secDeg + 'deg)';
       c.minute.style.transform = 'rotate(' + minDeg + 'deg)';
       c.hour.style.transform = 'rotate(' + hourDeg + 'deg)';
     });
   }
 
-  function start() {
+  function startAnalog() {
     if (timerId) return;
-    clocks.forEach(c => {
+    analog.forEach(c => {
       c.hour.style.transition = 'transform 1.5s';
       c.minute.style.transition = 'transform 1.5s';
       c.second.style.transition = 'transform 1s';
     });
     baseTime = null;   // 重新启用时以当前时刻为基准
-    tick();
-    timerId = setInterval(tick, 500);
+    tickAnalog();
+    timerId = setInterval(tickAnalog, 500);
   }
-
-  function stop() {
+  function stopAnalog() {
     if (timerId) { clearInterval(timerId); timerId = null; }
   }
 
-  function apply(enabled) {
-    clocks.forEach(c => {
-      c.root.classList.toggle('enabled', enabled);
-      c.root.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+  function tickStandard() {
+    const now = new Date();
+    const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+    const minutes = now.getMinutes() + seconds / 60;
+    const hours = (now.getHours() % 12) + minutes / 60;
+    const dateText = now.getFullYear() + '/' + pad2(now.getMonth() + 1) + '/' + pad2(now.getDate())
+      + ' ' + ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
+    standard.forEach(c => {
+      c.hour.setAttribute('transform', 'rotate(' + (hours * 30) + ' 200 200)');
+      c.minute.setAttribute('transform', 'rotate(' + (minutes * 6) + ' 200 200)');
+      c.second.setAttribute('transform', 'rotate(' + (seconds * 6) + ' 200 200)');
+      c.date.textContent = dateText;
     });
-    sw.checked = enabled;
-    if (enabled) start(); else stop();
+  }
+  function loopStandard() {
+    tickStandard();
+    rafId = requestAnimationFrame(loopStandard);
+  }
+  function startStandard() {
+    if (rafId !== null) return;
+    tickStandard();
+    rafId = requestAnimationFrame(loopStandard);
+  }
+  function stopStandard() {
+    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
   }
 
-  apply(getEnabled());
+  function getStyle() {
+    try { return localStorage.getItem(KEY) === 'materialyou' ? 'materialyou' : DEFAULT; }
+    catch { return DEFAULT; }
+  }
 
-  sw.addEventListener('change', () => {
-    const enabled = sw.checked;
-    try { localStorage.setItem(KEY, enabled ? 'true' : 'false'); } catch {}
-    apply(enabled);
+  function apply(style) {
+    const isStandard = style === DEFAULT;
+    analog.forEach(c => {
+      c.root.classList.toggle('enabled', !isStandard);
+      c.root.setAttribute('aria-hidden', isStandard ? 'true' : 'false');
+    });
+    standard.forEach(c => {
+      c.root.classList.toggle('enabled', isStandard);
+      c.root.setAttribute('aria-hidden', isStandard ? 'false' : 'true');
+    });
+    if (seg.value !== style) seg.value = style;
+    if (isStandard) { stopAnalog(); startStandard(); }
+    else { stopStandard(); startAnalog(); }
+  }
+
+  apply(getStyle());
+
+  seg.addEventListener('change', (e) => {
+    const style = e.target.value;
+    if (style !== 'standard' && style !== 'materialyou') return;
+    try { localStorage.setItem(KEY, style); } catch {}
+    apply(style);
   });
+})();
+
+/* =========================================================
+   横屏首页尺寸调节 + 拖动预览浮层
+   - 仅影响横屏首页大框，竖屏宽度保持不变
+   - 弹出/淡出效果移植自 prompt.html 的 .home-preview-float
+   ========================================================= */
+(function initLayoutSettings() {
+  const KEY = 'home-landscape-size';
+  const DEFAULTS = { width: 1120, height: 560 };
+  const MIN = { width: 700, height: 420 };
+  const MAX = { width: 1600, height: 1000 };
+  const wSlider = document.getElementById('homeWidthSlider');
+  const hSlider = document.getElementById('homeHeightSlider');
+  const wValue = document.getElementById('homeWidthValue');
+  const hValue = document.getElementById('homeHeightValue');
+  const float = document.getElementById('layoutPreviewFloat');
+  const previewBody = document.getElementById('layoutPreviewBody');
+  const homeCard = document.querySelector('.home-card');
+  if (!wSlider || !hSlider || !float || !previewBody || !homeCard) return;
+
+  let values = { ...DEFAULTS };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY));
+    if (saved && Number.isFinite(saved.width) && Number.isFinite(saved.height)) {
+      values = {
+        width: Math.min(MAX.width, Math.max(MIN.width, saved.width)),
+        height: Math.min(MAX.height, Math.max(MIN.height, saved.height)),
+      };
+    }
+  } catch {}
+
+  let hideTimer = null;
+  let visible = false;
+  let clone = null;
+
+  function apply(persist) {
+    const root = document.documentElement;
+    root.style.setProperty('--home-landscape-width', values.width + 'px');
+    root.style.setProperty('--home-landscape-height', values.height + 'px');
+    wSlider.value = values.width;
+    hSlider.value = values.height;
+    if (wValue) wValue.textContent = values.width + ' px';
+    if (hValue) hValue.textContent = values.height + ' px';
+    if (clone) {
+      clone.style.width = values.width + 'px';
+      clone.style.minHeight = values.height + 'px';
+    }
+    if (persist) {
+      try { localStorage.setItem(KEY, JSON.stringify(values)); } catch {}
+    }
+  }
+
+  function showPreview(duration = 900) {
+    clearTimeout(hideTimer);
+    hideTimer = null;
+    if (!visible) {
+      visible = true;
+      if (!clone) {
+        clone = homeCard.cloneNode(true);
+        clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        previewBody.appendChild(clone);
+      }
+      clone.style.width = values.width + 'px';
+      clone.style.minHeight = values.height + 'px';
+      float.classList.add('show');
+      float.setAttribute('aria-hidden', 'false');
+    }
+    hideTimer = setTimeout(hidePreview, duration);
+  }
+
+  function hidePreview() {
+    clearTimeout(hideTimer);
+    hideTimer = null;
+    if (!visible) return;
+    visible = false;
+    float.classList.remove('show');
+    float.setAttribute('aria-hidden', 'true');
+  }
+
+  function onSlide(which) {
+    const el = which === 'width' ? wSlider : hSlider;
+    const n = Number(el.value);
+    if (!Number.isFinite(n)) return;
+    values[which] = n;
+    apply(true);
+    showPreview(900);
+  }
+
+  // 与 prompt.html 一致：input 期间持续显示，松手/change 后再短暂淡出
+  ['input', 'change', 'pointerup', 'pointercancel'].forEach(evt => {
+    wSlider.addEventListener(evt, () => onSlide('width'));
+    hSlider.addEventListener(evt, () => onSlide('height'));
+  });
+
+  apply(false);
 })();
 
 /* =========================================================
@@ -2388,6 +2831,7 @@ function exitFocus() {
 
 document.getElementById('nowTime').addEventListener('click', () => enterFocus('clock'));
 document.getElementById('analogClock').addEventListener('click', () => enterFocus('clock'));
+document.getElementById('standardClock').addEventListener('click', () => enterFocus('clock'));
 document.getElementById('cdRow').addEventListener('click', () => enterFocus('countdown'));
 
 focusPip.addEventListener('click', () => {
@@ -2440,7 +2884,8 @@ document.addEventListener('keydown', (e) => {
    大时间界面小部件配置 + 设置页预览
    ========================================================= */
 const WIDGET_KEY = 'focus_widgets_v1';
-const WIDGET_DEFAULT = { subject: true, range: true, next: true, clock: true };
+/* 默认只开启“考试时间段”和“当前时间”；“当前科目”“下一科目”默认关闭（用户可在设置页开启） */
+const WIDGET_DEFAULT = { subject: false, range: true, next: false, clock: true };
 
 function getWidgetConfig() {
   try {
@@ -2525,6 +2970,7 @@ function isPlanOpen() { return planOverlay && planOverlay.classList.contains('ac
 function isSettingsOpen() { return document.body.classList.contains('view-settings'); }
 
 /* 唯一的视图切换入口：只有两个稳定状态，中间态由 CSS 自动插值 */
+let lastView = null;
 function setView(view) {
   const toSettings = view === 'settings';
   document.body.classList.toggle('view-settings', toSettings);
@@ -2535,6 +2981,14 @@ function setView(view) {
     if (isPlanOpen()) document.getElementById('planCloseBtn').click();
     updateWidgetPreview(Date.now());
   }
+  /* 视图切换时平滑滚回顶部：
+     - 点 home 从设置页（可能已滚到较下方）返回首页，避免停在空白区；
+     - 点 settings 从已滚动的首页进入设置，避免直接落在设置页中段。
+     首次初始化 lastView===null 时不滚动，不干扰浏览器恢复滚动位置。 */
+  if (lastView !== null && lastView !== view) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  lastView = view;
 }
 function openSettings() { setView('settings'); }
 function closeSettings() { setView('home'); }
@@ -2881,7 +3335,6 @@ function loadPersistSubjectOnBoot() {
   });
 }
 loadPersistSubjectOnBoot();
-
 /* =========================================================
    定时更新
    ========================================================= */
