@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="mdui-theme-auto">
+<html lang="zh-CN" class="mdui-theme-light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no">
@@ -26,23 +26,6 @@
   --exam-urgent: #C0282E;
   --exam-ended: #916B3D;
 }
-html.mdui-theme-dark {
-  --exam-background: #163D3E;
-  --exam-card: #214849;
-  --exam-accent: #D2EFEE;
-  --exam-urgent: #FF9A9F;
-  --exam-ended: #C9A26B;
-}
-@media (prefers-color-scheme: dark) {
-  html.mdui-theme-auto {
-    --exam-background: #163D3E;
-    --exam-card: #214849;
-    --exam-accent: #D2EFEE;
-    --exam-urgent: #FF9A9F;
-    --exam-ended: #C9A26B;
-  }
-}
-
 /* ========== 基础重置 ========== */
 * { box-sizing: border-box; }
 html, body {
@@ -62,7 +45,6 @@ body {
   overflow-y: auto;
 }
 body.font-page-open { overflow: hidden; }
-body.focus-mode { overflow: hidden; }
 
 /* ========== 顶栏 ========== */
 .app-top-bar {
@@ -168,7 +150,6 @@ body.focus-mode { overflow: hidden; }
   display: flex;
   justify-content: center;
   margin: 10px 0 16px;
-  cursor: pointer;
 }
 .round-clock {
   width: min(330px, 78vw);
@@ -179,11 +160,8 @@ body.focus-mode { overflow: hidden; }
   filter: drop-shadow(0 8px 14px rgba(15, 23, 42, .10));
 }
 .clock-face-border { fill: var(--exam-card); stroke: #333333; stroke-width: 5; }
-html.mdui-theme-dark .clock-face-border { stroke: #d6d8dc; }
 .clock-tick { stroke: #555555; stroke-width: 1.2; stroke-linecap: round; }
 .clock-tick.major { stroke: #333333; stroke-width: 1.8; }
-html.mdui-theme-dark .clock-tick { stroke: #aab1bb; }
-html.mdui-theme-dark .clock-tick.major { stroke: #d6d8dc; }
 .clock-number {
   fill: #333333;
   font-size: 31px;
@@ -191,7 +169,6 @@ html.mdui-theme-dark .clock-tick.major { stroke: #d6d8dc; }
   text-anchor: middle;
   dominant-baseline: middle;
 }
-html.mdui-theme-dark .clock-number { fill: #dfe3e8; }
 .clock-date {
   fill: rgb(var(--mdui-color-on-surface-variant));
   font-size: 16px;
@@ -201,8 +178,6 @@ html.mdui-theme-dark .clock-number { fill: #dfe3e8; }
 .clock-hour { stroke: #000000; stroke-width: 7; stroke-linecap: round; }
 .clock-minute { stroke: #000000; stroke-width: 5; stroke-linecap: round; }
 .clock-second { stroke: #C0282E; stroke-width: 2; stroke-linecap: round; }
-html.mdui-theme-dark .clock-hour { stroke: #edf0f3; }
-html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 .clock-pin-outer { fill: var(--exam-card); stroke: #C0282E; stroke-width: 2; }
 .divider {
   height: 1px;
@@ -231,30 +206,34 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 .main-name.ended   { color: var(--exam-ended); }
 
 .cd-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
   justify-content: center;
   gap: 10px;
   margin-bottom: 14px;
-  cursor: pointer;
-  transition: transform .2s, opacity .2s;
 }
-.cd-row:active { transform: scale(.98); }
 .cd-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: rgb(var(--mdui-color-surface-container-highest));
   border-radius: 16px;
   padding: 14px 10px 10px;
-  min-width: 70px;
+  width: 100%;
+  min-width: 0;
   text-align: center;
-  flex: 1;
   max-width: 100px;
+  justify-self: center;
 }
 .cd-num {
-  font-size: 32px;
+  font-size: 40px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
   color: rgb(var(--mdui-color-primary));
   line-height: 1.1;
-  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
+  font-family: inherit;
 }
 .cd-num.urgent  { color: var(--exam-urgent); }
 .cd-num.running { color: rgb(var(--mdui-color-primary)); }
@@ -775,7 +754,7 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
     padding: 16px 8px 12px;
   }
   #dashboardPage .cd-num {
-    font-size: clamp(26px, 4vw, 44px);
+    font-size: clamp(32px, 5vw, 52px);
   }
   #dashboardPage .status {
     grid-column: 2;
@@ -803,7 +782,7 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   }
   .cd-row { gap: 6px; }
   .cd-unit { min-width: 0; padding: 10px 4px 8px; }
-  .cd-num { font-size: 26px; }
+  .cd-num { font-size: 32px; }
   .now-time { font-size: 38px; }
   .exam-item { flex-wrap: wrap; }
   .exam-cd { min-width: 0; }
@@ -854,7 +833,7 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   <div style="flex-grow: 1"></div>
   <div class="top-bar-actions">
     <mdui-button-icon id="openPlanBtn" icon="settings" title="编辑考试计划"></mdui-button-icon>
-    <mdui-button-icon id="themeToggleBtn" icon="dark_mode" title="切换深浅色"></mdui-button-icon>
+    <mdui-button-icon id="fullscreenBtn" icon="fullscreen" title="进入全屏"></mdui-button-icon>
   </div>
 </mdui-top-app-bar>
 
@@ -862,7 +841,7 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
   <!-- ==================== 主页（倒计时） ==================== -->
   <main id="dashboardPage" class="page active">
     <div class="card">
-      <div class="round-clock-wrap" id="cdClock" title="点击放大">
+      <div class="round-clock-wrap" id="cdClock">
         <svg class="round-clock" id="roundClock" viewBox="0 0 400 400" role="img" aria-label="圆形实时时钟">
           <circle class="clock-face-border" cx="200" cy="200" r="186"></circle>
           <g id="clockTicks"></g>
@@ -879,7 +858,7 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
       <div class="divider"></div>
       <div class="main-label" id="mainLabel">当前状态</div>
       <div class="main-name waiting" id="mainName">暂无考试安排</div>
-      <div class="cd-row" id="cdRow" title="点击放大">
+      <div class="cd-row" id="cdRow">
         <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
         <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
@@ -1006,50 +985,26 @@ html.mdui-theme-dark .clock-minute { stroke: #edf0f3; }
 })();
 
 /* =========================================================
-   深浅色切换
+   网页全屏
    ========================================================= */
-(function initThemeToggle() {
-  const btn = document.getElementById('themeToggleBtn');
-  const root = document.documentElement;
-  const THEME_KEY = 'exam-clock-theme';
-
-  function applyTheme(theme) {
-    root.classList.remove('mdui-theme-auto', 'mdui-theme-light', 'mdui-theme-dark');
-    if (theme === 'light' || theme === 'dark') {
-      root.classList.add('mdui-theme-' + theme);
-      btn.setAttribute('icon', theme === 'dark' ? 'light_mode' : 'dark_mode');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+fullscreenBtn.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
     } else {
-      root.classList.add('mdui-theme-auto');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      btn.setAttribute('icon', prefersDark ? 'light_mode' : 'dark_mode');
+      await document.documentElement.requestFullscreen();
     }
+  } catch (error) {
+    console.error('切换全屏失败', error);
   }
+});
 
-  function getSaved() {
-    try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch { return 'auto'; }
-  }
-
-  applyTheme(getSaved());
-
-  btn.addEventListener('click', () => {
-    const cur = getSaved();
-    let next;
-    if (cur === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      next = prefersDark ? 'light' : 'dark';
-    } else if (cur === 'dark') {
-      next = 'light';
-    } else {
-      next = 'dark';
-    }
-    try { localStorage.setItem(THEME_KEY, next); } catch {}
-    applyTheme(next);
-  });
-
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (getSaved() === 'auto') applyTheme('auto');
-  });
-})();
+document.addEventListener('fullscreenchange', () => {
+  const isFullscreen = Boolean(document.fullscreenElement);
+  fullscreenBtn.setAttribute('icon', isFullscreen ? 'fullscreen_exit' : 'fullscreen');
+  fullscreenBtn.setAttribute('title', isFullscreen ? '退出全屏' : '进入全屏');
+});
 
 /* =========================================================
    考试数据逻辑
@@ -1609,9 +1564,6 @@ function exitFocus() {
   focusCloseBtn.classList.remove('active');
   focusHint.classList.remove('active');
 }
-
-document.getElementById('cdClock').addEventListener('click', () => enterFocus('clock'));
-document.getElementById('cdRow').addEventListener('click', () => enterFocus('countdown'));
 
 focusPip.addEventListener('click', () => {
   if (!focusMode.active) return;
