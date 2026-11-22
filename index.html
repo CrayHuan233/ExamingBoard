@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no">
 <meta name="renderer" content="webkit">
-<title>考试看板</title>
-<link rel="icon" type="image/svg+xml" href="https://fonts.gstatic.com/s/i/materialicons/schedule/v12/24px.svg">
+<title>合六考试看板</title>
+<link rel="icon" type="image/png" href="https://chn.picui.cn/8997/2026/11/22/6b02b269013fd.png">
 <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
@@ -379,51 +379,94 @@ body.font-page-open { overflow: hidden; }
   text-align: center;
   padding: 20px 0;
 }
-
-/* 考试条目 */
-.exam-item {
+#examDays {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.exam-day-column {
+  flex: 0 0 min(300px, calc(100vw - 72px));
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.exam-day-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  background: rgb(var(--mdui-color-surface-container-low));
+  padding: 12px;
   border-radius: 16px;
-  margin-bottom: 10px;
-  border: 1px solid transparent;
-  transition: border-color .2s, background .2s;
+  background: rgb(var(--mdui-color-surface-container-low));
 }
-.exam-item.active {
-  border-color: rgb(var(--mdui-color-primary));
+.exam-day-label {
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 600;
+}
+.exam-day-header mdui-text-field { flex: 1; min-width: 0; }
+.day-subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 48px;
+}
+.day-empty {
+  padding: 14px 10px;
+  border-radius: 14px;
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+.exam-subject-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  border-radius: 14px;
   background: rgb(var(--mdui-color-surface-container));
 }
-.exam-info { flex: 1; min-width: 0; }
-.exam-name {
-  font-size: 15px;
+.exam-subject-info { flex: 1; min-width: 0; }
+.exam-subject-name {
+  font-size: 14px;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
-.exam-time {
+.exam-subject-time {
+  margin-top: 4px;
   font-size: 12px;
   color: rgb(var(--mdui-color-on-surface-variant));
-  margin-top: 3px;
-}
-.exam-cd {
-  font-size: 13px;
-  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: rgb(var(--mdui-color-on-surface-variant));
-  white-space: nowrap;
-  text-align: right;
-  min-width: 110px;
-  font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
-.exam-cd.urgent  { color: var(--exam-urgent); }
-.exam-cd.running { color: rgb(var(--mdui-color-primary)); }
-.exam-cd.ended   { color: var(--exam-ended); }
-.del-btn {
-  flex: 0 0 auto;
+.day-subject-editor {
+  display: none;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+.day-subject-editor.open { display: block; }
+.day-subject-form {
+  position: relative;
+  z-index: 10;
+  margin: 0 0 10px;
+}
+.day-subject-form .subject-picker { width: 100%; }
+.day-time-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.day-time-row mdui-text-field { width: 100%; min-width: 0; }
+.day-editor-actions { display: flex; gap: 8px; margin-top: 10px; }
+.day-editor-actions mdui-button { flex: 1; min-width: 0; }
+.day-add-subject { width: 100%; margin-top: 10px; }
+.day-add-subject.is-hidden { display: none !important; }
+.add-exam-day-column {
+  flex: 0 0 170px;
+  margin-top: 14px;
 }
 
 /* ========== 一镜到底层 ========== */
@@ -468,7 +511,7 @@ body.font-page-open { overflow: hidden; }
 
 .plan-inner {
   width: 100%;
-  max-width: 520px;
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -784,8 +827,6 @@ body.font-page-open { overflow: hidden; }
   .cd-unit { min-width: 0; padding: 10px 4px 8px; }
   .cd-num { font-size: 32px; }
   .now-time { font-size: 38px; }
-  .exam-item { flex-wrap: wrap; }
-  .exam-cd { min-width: 0; }
   .plan-page-content { padding: 16px 12px 70px; }
   .focus-pip { top: 14px; right: 14px; padding: 10px 12px; max-width: 160px; }
   .focus-pip-clock { font-size: 17px; }
@@ -828,12 +869,12 @@ body.font-page-open { overflow: hidden; }
 <mdui-top-app-bar class="app-top-bar" variant="small" scroll-behavior="shrink elevate">
   <div class="brand">
     <img class="brand-logo" src="https://chn.picui.cn/8997/2026/11/21/6b01561562035.png" alt="考试看板标识">
-    <mdui-top-app-bar-title>| 考试看板</mdui-top-app-bar-title>
+    <mdui-top-app-bar-title>| 合六考试看板</mdui-top-app-bar-title>
   </div>
   <div style="flex-grow: 1"></div>
   <div class="top-bar-actions">
-    <mdui-button-icon id="openPlanBtn" icon="settings" title="编辑考试计划"></mdui-button-icon>
     <mdui-button-icon id="fullscreenBtn" icon="fullscreen" title="进入全屏"></mdui-button-icon>
+    <mdui-button-icon id="openPlanBtn" icon="settings" title="编辑考试计划"></mdui-button-icon>
   </div>
 </mdui-top-app-bar>
 
@@ -914,48 +955,23 @@ body.font-page-open { overflow: hidden; }
         <h1 class="page-title">考试计划管理</h1>
       </div>
 
-      <section class="card" aria-labelledby="addTitle">
-        <h2 class="list-title" id="addTitle">添加考试</h2>
-        <div class="form-row subject-form-row">
-          <mdui-button id="subjectPickerBtn" class="subject-picker" variant="outlined" icon="school">科目：语文</mdui-button>
-          <div class="subject-dropdown" id="subjectDropdown">
-            <div class="subject-grid" id="subjectGrid">
-              <button class="subject-grid-button selected" type="button" data-subject="语文">语</button>
-              <button class="subject-grid-button" type="button" data-subject="数学">数</button>
-              <button class="subject-grid-button" type="button" data-subject="英语">英</button>
-              <button class="subject-grid-button" type="button" data-subject="物理">物</button>
-              <button class="subject-grid-button" type="button" data-subject="化学">化</button>
-              <button class="subject-grid-button" type="button" data-subject="生物">生</button>
-              <button class="subject-grid-button" type="button" data-subject="政治">政</button>
-              <button class="subject-grid-button" type="button" data-subject="历史">史</button>
-              <button class="subject-grid-button" type="button" data-subject="地理">地</button>
-            </div>
-            <div class="subject-grid-actions">
-              <mdui-button id="subjectGridCustom" variant="text">自定义科目</mdui-button>
-            </div>
-          </div>
-          <mdui-select id="subjectSelect" variant="outlined" label="科目" style="display:none" aria-hidden="true">
-            <mdui-menu-item value="语文">语文</mdui-menu-item>
-            <mdui-menu-item value="数学">数学</mdui-menu-item>
-            <mdui-menu-item value="英语">英语</mdui-menu-item>
-            <mdui-menu-item value="物理">物理</mdui-menu-item>
-            <mdui-menu-item value="化学">化学</mdui-menu-item>
-            <mdui-menu-item value="生物">生物</mdui-menu-item>
-            <mdui-menu-item value="政治">政治</mdui-menu-item>
-            <mdui-menu-item value="历史">历史</mdui-menu-item>
-            <mdui-menu-item value="地理">地理</mdui-menu-item>
-            <mdui-menu-item value="__custom__">自定义…</mdui-menu-item>
-          </mdui-select>
-        </div>
-        <div class="form-row"><div class="datetime-field-wrap"><mdui-text-field id="startInput" label="考试开始时间" variant="outlined" type="datetime-local" clearable></mdui-text-field><span class="datetime-placeholder" aria-hidden="true">请选择考试开始时间</span></div></div>
-        <div class="form-row"><div class="datetime-field-wrap"><mdui-text-field id="endInput" label="考试截止时间" variant="outlined" type="datetime-local" clearable></mdui-text-field><span class="datetime-placeholder" aria-hidden="true">请选择考试截止时间</span></div></div>
-        <mdui-button id="addBtn" variant="filled" class="btn-primary" icon="add">添加考试</mdui-button>
-      </section>
-
       <section class="card" aria-labelledby="examListTitle">
         <h2 class="list-title" id="examListTitle">考试列表</h2>
-        <div id="examList"></div>
+        <div id="examDays"></div>
+        <mdui-select id="subjectSelect" variant="outlined" label="科目" style="display:none" aria-hidden="true">
+          <mdui-menu-item value="语文">语文</mdui-menu-item>
+          <mdui-menu-item value="数学">数学</mdui-menu-item>
+          <mdui-menu-item value="英语">英语</mdui-menu-item>
+          <mdui-menu-item value="物理">物理</mdui-menu-item>
+          <mdui-menu-item value="化学">化学</mdui-menu-item>
+          <mdui-menu-item value="生物">生物</mdui-menu-item>
+          <mdui-menu-item value="政治">政治</mdui-menu-item>
+          <mdui-menu-item value="历史">历史</mdui-menu-item>
+          <mdui-menu-item value="地理">地理</mdui-menu-item>
+          <mdui-menu-item value="__custom__">自定义…</mdui-menu-item>
+        </mdui-select>
       </section>
+
     </div>
   </div>
 </div>
@@ -1022,12 +1038,6 @@ function getExams() {
 }
 function saveExams(list) {
   localStorage.setItem(KEY, JSON.stringify(list));
-}
-
-function fmtDT(iso) {
-  const d = new Date(iso);
-  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
-    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 function escapeHtml(s) {
@@ -1177,38 +1187,10 @@ function renderMain(snapshot) {
   });
 }
 
-function renderList(snapshot, now) {
-  const container = document.getElementById('examList');
-  if (!container) return;
-  if (snapshot.exams.length === 0) {
-    container.innerHTML = '<div class="empty">暂无考试</div>';
-    return;
-  }
-  container.innerHTML = snapshot.exams.map(ex => {
-    const { phase, parts, urgent } = getExamProgress(ex, now);
-    const cdText = phase === 'waiting'
-      ? '剩 ' + pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs)
-      : phase === 'running'
-        ? '已考 ' + pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs)
-        : '已结束';
-    const cdCls = phase === 'waiting' ? (urgent ? 'urgent' : '') : phase;
-    const activeClass = snapshot.target && ex.id === snapshot.target.id ? 'active' : '';
-    return `<div class="exam-item ${activeClass}">
-      <div class="exam-info">
-        <div class="exam-name">${escapeHtml(ex.name)}</div>
-        <div class="exam-time">${fmtDT(ex.start)} — ${fmtDT(ex.end)}</div>
-      </div>
-      <div class="exam-cd ${cdCls}">${cdText}</div>
-      <mdui-button-icon class="del-btn" data-id="${escapeHtml(String(ex.id))}" icon="delete_outline" title="删除"></mdui-button-icon>
-    </div>`;
-  }).join('');
-}
-
 function render() {
   const now = Date.now();
   const snapshot = createExamSnapshot(now);
   renderMain(snapshot);
-  renderList(snapshot, now);
   if (focusMode.active) renderFocus(snapshot, now);
 }
 
@@ -1599,52 +1581,67 @@ focusOverlay.addEventListener('click', (e) => {
    科目选择 & 自定义对话框【修复版】
    ========================================================= */
 const subjectSelect = document.getElementById('subjectSelect');
-const subjectPickerBtn = document.getElementById('subjectPickerBtn');
-const subjectDropdown = document.getElementById('subjectDropdown');
-const subjectGrid = document.getElementById('subjectGrid');
 const customDialog = document.getElementById('customSubjectDialog');
 const customSubjectInput = document.getElementById('customSubjectInput');
 const customSubjectCancel = document.getElementById('customSubjectCancel');
 const customSubjectConfirm = document.getElementById('customSubjectConfirm');
+const examDays = document.getElementById('examDays');
 
 let lastSubjectValue = '语文';
 let pendingCustomSubject = null;
 let selectedSubject = '语文';
+let activeSubjectPicker = null;
 
 subjectSelect.value = '语文';
 
-subjectPickerBtn.addEventListener('click', () => {
-  subjectGrid.querySelectorAll('.subject-grid-button').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.subject === selectedSubject);
-  });
-  subjectDropdown.classList.toggle('open');
-});
+examDays.addEventListener('click', (e) => {
+  const picker = e.target.closest('.subject-picker');
+  if (picker) {
+    activeSubjectPicker = picker;
+    const dropdown = picker.parentElement.querySelector('.subject-dropdown');
+    const shouldOpen = !dropdown.classList.contains('open');
+    examDays.querySelectorAll('.subject-dropdown').forEach(item => item.classList.remove('open'));
+    if (shouldOpen) {
+      dropdown.querySelectorAll('.subject-grid-button').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.subject === picker.dataset.subject);
+      });
+      dropdown.classList.add('open');
+    }
+    return;
+  }
 
-subjectGrid.addEventListener('click', (e) => {
-  const btn = e.target.closest('.subject-grid-button');
-  if (!btn) return;
-  selectedSubject = btn.dataset.subject;
-  subjectSelect.value = selectedSubject;
-  lastSubjectValue = selectedSubject;
-  subjectPickerBtn.textContent = '科目：' + selectedSubject;
-  subjectDropdown.classList.remove('open');
-});
+  const subjectButton = e.target.closest('.subject-grid-button');
+  if (subjectButton) {
+    const dropdown = subjectButton.closest('.subject-dropdown');
+    activeSubjectPicker = dropdown.parentElement.querySelector('.subject-picker');
+    selectedSubject = subjectButton.dataset.subject;
+    activeSubjectPicker.dataset.subject = selectedSubject;
+    subjectSelect.value = selectedSubject;
+    lastSubjectValue = selectedSubject;
+    activeSubjectPicker.textContent = '科目：' + selectedSubject;
+    dropdown.classList.remove('open');
+    return;
+  }
 
-document.getElementById('subjectGridCustom').addEventListener('click', () => {
-  subjectDropdown.classList.remove('open');
-  pendingCustomSubject = null;
-  customSubjectInput.value = '';
-  setTimeout(() => { customDialog.open = true; }, 80);
+  if (e.target.closest('.subject-grid-custom')) {
+    const dropdown = e.target.closest('.subject-dropdown');
+    activeSubjectPicker = dropdown.parentElement.querySelector('.subject-picker');
+    dropdown.classList.remove('open');
+    pendingCustomSubject = null;
+    customSubjectInput.value = '';
+    setTimeout(() => { customDialog.open = true; }, 80);
+  }
 });
 
 document.addEventListener('click', (e) => {
-  if (!subjectDropdown.classList.contains('open')) return;
-  if (e.target.closest('.subject-form-row')) return;
-  subjectDropdown.classList.remove('open');
+  if (e.target.closest('.day-subject-form')) return;
+  examDays.querySelectorAll('.subject-dropdown').forEach(item => item.classList.remove('open'));
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') subjectDropdown.classList.remove('open');
+  if (e.key === 'Escape') {
+    examDays.querySelectorAll('.subject-dropdown').forEach(item => item.classList.remove('open'));
+  }
 });
 
 subjectSelect.addEventListener('change', (e) => {
@@ -1667,7 +1664,10 @@ subjectSelect.addEventListener('change', (e) => {
 customDialog.addEventListener('closed', () => {
   if (pendingCustomSubject) {
     selectedSubject = pendingCustomSubject;
-    subjectPickerBtn.textContent = '科目：' + pendingCustomSubject;
+    if (activeSubjectPicker) {
+      activeSubjectPicker.dataset.subject = pendingCustomSubject;
+      activeSubjectPicker.textContent = '科目：' + pendingCustomSubject;
+    }
     let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
     if (!customItem) {
       customItem = document.createElement('mdui-menu-item');
@@ -1704,45 +1704,193 @@ customDialog.addEventListener('cancel', () => {
   pendingCustomSubject = null;
 });
 
-function getSelectedSubject() {
-  if (selectedSubject) return selectedSubject;
-  const val = subjectSelect.value;
-  if (val === '__custom_value__') {
-    const item = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
-    return item ? item.textContent : '';
-  }
-  if (val === '__custom__' || !val) return '';
-  return val;
+function getSelectedSubject(picker) {
+  return picker?.dataset.subject || '';
 }
 
+function localDateString(date) {
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
 
-/* =========================================================
-   添加/删除考试
-   ========================================================= */
-['startInput', 'endInput'].forEach(id => {
-  const field = document.getElementById(id);
-  const wrapper = field.closest('.datetime-field-wrap');
-  const updatePlaceholder = () => wrapper.classList.toggle('has-value', Boolean(field.value));
-  wrapper.addEventListener('click', () => {
-    const input = field.shadowRoot?.querySelector('input[type="datetime-local"]');
-    if (input?.showPicker) input.showPicker();
+function examDateString(exam) {
+  const date = new Date(exam.start);
+  return Number.isNaN(date.getTime()) ? '' : localDateString(date);
+}
+
+function createExamDay(date) {
+  return { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date };
+}
+
+function formatExamTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : pad(date.getHours()) + ':' + pad(date.getMinutes());
+}
+
+function renderDaySubjectCards(day) {
+  const card = Array.from(examDays.querySelectorAll('.exam-day-column'))
+    .find(item => item.dataset.dayId === day.id);
+  if (!card) return;
+  const subjects = getExams()
+    .filter(exam => examDateString(exam) === day.date)
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  card.querySelector('.day-subject-list').innerHTML = subjects.length ? subjects.map(exam => `
+    <div class="exam-subject-card">
+      <div class="exam-subject-info">
+        <div class="exam-subject-name">${escapeHtml(exam.name)}</div>
+        <div class="exam-subject-time">${escapeHtml(formatExamTime(exam.start))} — ${escapeHtml(formatExamTime(exam.end))}</div>
+      </div>
+      <mdui-button-icon class="day-subject-delete" data-id="${escapeHtml(String(exam.id))}" icon="delete_outline" title="删除科目"></mdui-button-icon>
+    </div>
+  `).join('') : '<div class="empty day-empty">暂无科目</div>';
+}
+
+function renderExamDays() {
+  const subjects = [['语文', '语'], ['数学', '数'], ['英语', '英'], ['物理', '物'], ['化学', '化'], ['生物', '生'], ['政治', '政'], ['历史', '史'], ['地理', '地']];
+  const columns = examDayRecords.map((day, index) => `
+    <div class="exam-day-column" data-day-id="${escapeHtml(day.id)}">
+      <div class="exam-day-header">
+        <span class="exam-day-label">第${index + 1}个考试日</span>
+        <mdui-text-field class="day-date-input" label="考试日期" variant="outlined" type="date" value="${escapeHtml(day.date)}"></mdui-text-field>
+      </div>
+      <div class="day-subject-list"></div>
+      <div class="day-subject-editor">
+        <div class="form-row day-subject-form">
+          <mdui-button class="subject-picker" variant="outlined" icon="school" data-subject="">选择科目</mdui-button>
+          <div class="subject-dropdown">
+            <div class="subject-grid">
+              ${subjects.map(([name, label]) => `<button class="subject-grid-button" type="button" data-subject="${name}">${label}</button>`).join('')}
+            </div>
+            <div class="subject-grid-actions">
+              <mdui-button class="subject-grid-custom" variant="text">自定义科目</mdui-button>
+            </div>
+          </div>
+        </div>
+        <div class="day-time-row">
+          <mdui-text-field class="day-time-input" label="开始时间" variant="outlined" type="time"></mdui-text-field>
+          <mdui-text-field class="day-time-input" label="结束时间" variant="outlined" type="time"></mdui-text-field>
+        </div>
+        <div class="day-editor-actions">
+          <mdui-button class="day-cancel-subject" variant="outlined">取消</mdui-button>
+          <mdui-button class="day-confirm-subject" variant="filled" icon="check">确认添加</mdui-button>
+        </div>
+      </div>
+      <mdui-button class="day-add-subject" variant="tonal" icon="add">添加科目</mdui-button>
+    </div>
+  `).join('');
+  examDays.innerHTML = columns + '<mdui-button id="addExamDayBtn" class="add-exam-day-column" variant="tonal" icon="add">增加考试日</mdui-button>';
+  examDayRecords.forEach(renderDaySubjectCards);
+}
+
+function getDayInput(card, selector) {
+  return card.querySelector(selector);
+}
+
+let examDayRecords = Array.from(new Set(getExams().map(examDateString).filter(Boolean)))
+  .sort()
+  .map(createExamDay);
+if (examDayRecords.length === 0) examDayRecords.push(createExamDay(localDateString(new Date())));
+renderExamDays();
+
+examDays.addEventListener('change', (e) => {
+  if (!e.target.matches('.day-date-input')) return;
+  const card = e.target.closest('.exam-day-column');
+  const day = examDayRecords.find(item => item.id === card.dataset.dayId);
+  const newDate = e.target.value;
+  if (!newDate) {
+    e.target.value = day.date;
+    return;
+  }
+  if (examDayRecords.some(item => item !== day && item.date === newDate)) {
+    e.target.value = day.date;
+    mdui.snackbar({ message: '该日期已存在考试日' });
+    return;
+  }
+  const previousDate = day.date;
+  const exams = getExams();
+  const updatedExams = exams.map(exam => {
+    if (examDateString(exam) !== previousDate) return exam;
+    const start = new Date(exam.start);
+    const end = new Date(exam.end);
+    return {
+      ...exam,
+      start: newDate + 'T' + formatExamTime(start),
+      end: newDate + 'T' + formatExamTime(end),
+    };
   });
-  field.addEventListener('input', updatePlaceholder);
-  field.addEventListener('change', updatePlaceholder);
-  updatePlaceholder();
+  if (updatedExams.some((exam, index) => exam !== exams[index])) saveExams(updatedExams);
+  day.date = newDate;
+  renderDaySubjectCards(day);
+  render();
 });
 
-document.getElementById('addBtn').addEventListener('click', () => {
-  const startEl = document.getElementById('startInput');
-  const endEl   = document.getElementById('endInput');
+examDays.addEventListener('click', (e) => {
+  const addExamDayButton = e.target.closest('.add-exam-day-column');
+  if (addExamDayButton) {
+    const dates = examDayRecords.map(day => day.date).sort();
+    const latestDate = dates[dates.length - 1] || localDateString(new Date());
+    const nextDate = new Date(latestDate + 'T12:00:00');
+    nextDate.setDate(nextDate.getDate() + 1);
+    examDayRecords.push(createExamDay(localDateString(nextDate)));
+    renderExamDays();
+    return;
+  }
 
-  const name  = getSelectedSubject();
-  const start = startEl.value;
-  const end   = endEl.value;
+  const field = e.target.closest('.day-date-input, .day-time-input');
+  if (field) {
+    const type = field.classList.contains('day-date-input') ? 'date' : 'time';
+    const input = field.shadowRoot?.querySelector(`input[type="${type}"]`);
+    if (input?.showPicker) input.showPicker();
+    return;
+  }
 
-  if (!name)  { mdui.snackbar({ message: '请选择科目' }); return; }
-  if (!start) { mdui.snackbar({ message: '请选择开始时间' }); return; }
-  if (!end)   { mdui.snackbar({ message: '请选择结束时间' }); return; }
+  const addButton = e.target.closest('.day-add-subject');
+  if (addButton) {
+    const card = addButton.closest('.exam-day-column');
+    card.querySelector('.day-subject-editor').classList.add('open');
+    addButton.classList.add('is-hidden');
+    return;
+  }
+
+  const cancelButton = e.target.closest('.day-cancel-subject');
+  if (cancelButton) {
+    const card = cancelButton.closest('.exam-day-column');
+    card.querySelector('.day-subject-editor').classList.remove('open');
+    card.querySelector('.day-add-subject').classList.remove('is-hidden');
+    card.querySelectorAll('.day-time-input').forEach(input => { input.value = ''; });
+    const picker = card.querySelector('.subject-picker');
+    picker.dataset.subject = '';
+    picker.textContent = '选择科目';
+    card.querySelector('.subject-dropdown').classList.remove('open');
+    return;
+  }
+
+  const deleteButton = e.target.closest('.day-subject-delete');
+  if (deleteButton) {
+    const id = deleteButton.dataset.id;
+    if (!id) return;
+    saveExams(getExams().filter(exam => String(exam.id) !== id));
+    const card = deleteButton.closest('.exam-day-column');
+    const day = examDayRecords.find(item => item.id === card.dataset.dayId);
+    renderDaySubjectCards(day);
+    render();
+    return;
+  }
+
+  const confirmButton = e.target.closest('.day-confirm-subject');
+  if (!confirmButton) return;
+  const card = confirmButton.closest('.exam-day-column');
+  const day = examDayRecords.find(item => item.id === card.dataset.dayId);
+  const name = getSelectedSubject(card.querySelector('.subject-picker'));
+  const startTime = getDayInput(card, '.day-time-input').value;
+  const endTime = card.querySelectorAll('.day-time-input')[1].value;
+
+  if (!day.date) { mdui.snackbar({ message: '请选择考试日期' }); return; }
+  if (!name) { mdui.snackbar({ message: '请选择科目' }); return; }
+  if (!startTime) { mdui.snackbar({ message: '请选择开始时间' }); return; }
+  if (!endTime) { mdui.snackbar({ message: '请选择结束时间' }); return; }
+
+  const start = day.date + 'T' + startTime;
+  const end = day.date + 'T' + endTime;
   if (new Date(end).getTime() <= new Date(start).getTime()) {
     mdui.snackbar({ message: '结束时间必须晚于开始时间' });
     return;
@@ -1751,18 +1899,13 @@ document.getElementById('addBtn').addEventListener('click', () => {
   const list = getExams();
   list.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, start, end });
   saveExams(list);
-
-  startEl.value = '';
-  endEl.value = '';
-  render();
-});
-
-document.getElementById('examList').addEventListener('click', (e) => {
-  const delBtn = e.target.closest('.del-btn');
-  if (!delBtn) return;
-  const id = delBtn.dataset.id;
-  if (!id) return;
-  saveExams(getExams().filter(x => String(x.id) !== id));
+  renderDaySubjectCards(day);
+  card.querySelector('.day-subject-editor').classList.remove('open');
+  card.querySelector('.day-add-subject').classList.remove('is-hidden');
+  card.querySelectorAll('.day-time-input').forEach(input => { input.value = ''; });
+  const picker = card.querySelector('.subject-picker');
+  picker.dataset.subject = '';
+  picker.textContent = '选择科目';
   render();
 });
 
@@ -1861,7 +2004,10 @@ customDialog.addEventListener('closed', () => {
   // 原有逻辑：临时自定义科目
   if (pendingCustomSubject) {
     selectedSubject = pendingCustomSubject;
-    subjectPickerBtn.textContent = '科目：' + pendingCustomSubject;
+    if (activeSubjectPicker) {
+      activeSubjectPicker.dataset.subject = pendingCustomSubject;
+      activeSubjectPicker.textContent = '科目：' + pendingCustomSubject;
+    }
     let customItem = subjectSelect.querySelector('mdui-menu-item[value="__custom_value__"]');
     if (!customItem) {
       customItem = document.createElement('mdui-menu-item');
