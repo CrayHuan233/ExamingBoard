@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
+<script src="./src/xlsx.full.min.js"></script>
 <style>
 /* ========== 字体 @font-face ========== */
 @font-face {
@@ -131,16 +132,10 @@ body.view-settings .app {
   line-height: 1.15;
   cursor: pointer;
   transition: transform .2s, opacity .2s;
+  margin-bottom: 22px;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
 .now-time:active { transform: scale(.97); }
-.now-date {
-  font-size: 13px;
-  color: rgb(var(--mdui-color-on-surface-variant));
-  text-align: center;
-  margin-top: 2px;
-  margin-bottom: 22px;
-}
 .divider {
   height: 1px;
   background: rgb(var(--mdui-color-outline-variant));
@@ -264,6 +259,62 @@ body.view-settings .app {
 }
 .form-row mdui-select { flex: 1; width: 100%; }
 .form-row mdui-text-field { flex: 1; }
+
+/* ========== 导入考试日程 ========== */
+.import-pane { margin-bottom: 12px; }
+.import-file-name {
+  font-size: 13px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-left: 8px;
+  word-break: break-all;
+}
+.import-opts { flex-wrap: wrap; }
+.import-opts mdui-select, .import-opts mdui-text-field { min-width: 130px; }
+.import-config-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--mdui-color-primary));
+  margin: 18px 0 10px;
+}
+.import-column-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+  gap: 10px;
+}
+.import-col-item {
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  border-radius: 12px;
+  padding: 10px;
+}
+.import-col-name {
+  font-size: 12px;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+.import-col-item mdui-select { width: 100%; }
+.import-preview-table {
+  overflow-x: auto;
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  border-radius: 12px;
+  max-height: 300px;
+}
+.import-preview-table table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.import-preview-table th, .import-preview-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgb(var(--mdui-color-outline-variant));
+  text-align: left;
+  white-space: nowrap;
+}
+.import-preview-table th {
+  background: rgb(var(--mdui-color-surface-container-highest));
+  position: sticky; top: 0;
+}
+.import-preview-table tr:last-child td { border-bottom: none; }
+.import-msg { font-size: 12px; margin-top: 8px; line-height: 1.6; }
+.import-msg.err { color: #c62828; }
+.import-msg.ok { color: #2e7d32; }
+.import-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* ========== 快捷结束时间 chips 行（选择开始时间后自动展开） ========== */
 .quick-end-row {
@@ -390,7 +441,7 @@ body.view-settings .app {
   visibility: hidden;
   pointer-events: none;
   background: rgb(var(--mdui-color-surface));
-  touch-action: none;
+  touch-action: pan-y;               /* 允许上下滚动，不再把手势当作退出 */
 }
 .plan-page-overlay.active {
   visibility: visible;
@@ -399,12 +450,15 @@ body.view-settings .app {
 .plan-page-content {
   position: absolute;
   inset: 0;
-  overflow: hidden;               /* 锁定内部滚动：内容不允许滚动，不超出界面 */
+  overflow-x: hidden;
+  overflow-y: auto;               /* 计划页内容可上下滚动 */
+  overscroll-behavior: contain;   /* 滚动不穿透到底层页面 */
+  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   opacity: 0;
-  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
   padding: 20px 16px 80px;
 }
 .plan-page-overlay.content-in .plan-page-content { opacity: 1; }
@@ -416,8 +470,8 @@ body.view-settings .app {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: 100%;
 }
 
 /* ========== 焦点模式（点击放大） ========== */
@@ -699,8 +753,8 @@ body.view-settings .app {
   .home-card .now-time {
     font-size: clamp(38px, 5vw, 56px);
     margin-top: 4px;
+    margin-bottom: 0;
   }
-  .home-card .now-date { margin-top: 0; margin-bottom: 0; }
   .home-card .divider { display: none; }
   .home-card .main-label { font-size: 16px; }
   .home-card .main-name { font-size: 28px; min-height: 38px; }
@@ -747,8 +801,28 @@ body.view-settings .app {
   .focus-main.switching-in { animation: none !important; }
 }
 
-/* 手势拖动期间隐藏 plan-page 滚动条视觉反馈 */
-.plan-page-overlay.gesturing .plan-page-content { overflow: hidden; }
+/* ========== 拖入文件的涟漪遮罩（从 prompt.html 移植） ========== */
+.drop-ripple {
+  position: fixed; inset: 0; z-index: 1000000;
+  pointer-events: none; overflow: hidden;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.drop-ripple.visible { opacity: 1; }
+.drop-ripple-mask {
+  position: absolute; inset: 0; pointer-events: none;
+  background: rgba(8,10,14,.5);
+  clip-path: circle(0px at 50% 50%);
+}
+.drop-ripple.visible .drop-ripple-mask { will-change: clip-path; }
+.drop-cursor-glow {
+  position: absolute; left: 0; top: 0; width: 180px; height: 180px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.55) 18%, rgba(255,255,255,0.22) 42%, rgba(255,255,255,0.06) 68%, rgba(255,255,255,0) 100%);
+  pointer-events: none; opacity: 0; transition: opacity .35s cubic-bezier(0.16,1,0.3,1);
+  mix-blend-mode: screen;
+}
+.drop-ripple.covered .drop-cursor-glow { opacity: 1; }
 
 /* ========== 修复：自定义科目Dialog浮在plan-page-overlay上层 ========== */
 #customSubjectDialog {
@@ -1298,7 +1372,6 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
         </svg>
       </div>
       <div class="now-time" id="nowTime" title="点击放大">--:--:--</div>
-      <div class="now-date" id="nowDate">----/--/--</div>
       </div>
       <div class="countdown-panel">
       <div class="divider"></div>
@@ -1423,6 +1496,72 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
         <mdui-button id="addBtn" variant="filled" class="btn-primary" icon="add">添加考试</mdui-button>
       </section>
 
+      <section class="card" aria-labelledby="importTitle">
+        <h2 class="list-title" id="importTitle">导入考试日程</h2>
+        <p class="settings-desc">支持 CSV / TSV / TXT / XLSX 文件或直接粘贴文本。表格的方向、表头行、内容范围与每一列的含义都由你指定。</p>
+
+        <div class="form-row">
+          <mdui-select id="importSource" variant="outlined" label="数据来源">
+            <mdui-menu-item value="file" selected>文件（CSV / TSV / TXT / XLSX）</mdui-menu-item>
+            <mdui-menu-item value="text">粘贴文本</mdui-menu-item>
+          </mdui-select>
+        </div>
+
+        <div id="importFilePane">
+          <input type="file" id="importFile" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden>
+          <mdui-button id="importPickBtn" variant="outlined" icon="attach_file">选择文件</mdui-button>
+          <span class="import-file-name" id="importFileName">未选择文件</span>
+        </div>
+
+        <div id="importTextPane" hidden>
+          <mdui-text-field id="importText" label="粘贴表格内容（每行一条，列间用 Tab / 逗号 / 分号分隔）" variant="outlined" rows="6" textarea clearable></mdui-text-field>
+        </div>
+
+        <div class="form-row" style="margin-top:12px">
+          <mdui-select id="importEncoding" variant="outlined" label="文本编码（CSV/TXT）">
+            <mdui-menu-item value="auto" selected>自动识别（UTF-8 / GBK）</mdui-menu-item>
+            <mdui-menu-item value="utf-8">UTF-8</mdui-menu-item>
+            <mdui-menu-item value="gb18030">GBK / GB18030</mdui-menu-item>
+          </mdui-select>
+          <mdui-select id="importSep" variant="outlined" label="列分隔符">
+            <mdui-menu-item value="auto" selected>自动识别</mdui-menu-item>
+            <mdui-menu-item value="tab">Tab 制表符</mdui-menu-item>
+            <mdui-menu-item value="comma">逗号 ,</mdui-menu-item>
+            <mdui-menu-item value="semicolon">分号 ;</mdui-menu-item>
+          </mdui-select>
+        </div>
+
+        <mdui-button id="importParseBtn" variant="filled" class="btn-primary" icon="table_rows">解析表格</mdui-button>
+        <div class="import-msg" id="importParseMsg"></div>
+
+        <div id="importConfig" hidden>
+          <div class="import-config-title">表格结构</div>
+          <div class="form-row">
+            <mdui-select id="importOrientation" variant="outlined" label="表格方向">
+              <mdui-menu-item value="vertical" selected>纵向（行是记录，列是字段）</mdui-menu-item>
+              <mdui-menu-item value="horizontal">横向（列是记录，行是字段）</mdui-menu-item>
+            </mdui-select>
+          </div>
+          <div class="form-row">
+            <mdui-text-field id="importHeaderRow" variant="outlined" type="number" min="1" value="1" label="表头在第几行"></mdui-text-field>
+            <mdui-text-field id="importStartRow" variant="outlined" type="number" min="1" value="2" label="实际内容从第几行"></mdui-text-field>
+            <mdui-text-field id="importEndRow" variant="outlined" type="number" min="1" value="6" label="实际内容到第几行"></mdui-text-field>
+          </div>
+
+          <div class="import-config-title">指定每一列的含义（程序不会自动判断）</div>
+          <div class="import-column-map" id="importColumns"></div>
+
+          <div class="import-config-title">预览（按你指定的含义解析）</div>
+          <div class="import-preview-table" id="importPreview"></div>
+          <div class="import-msg" id="importResultMsg"></div>
+
+          <div class="import-actions">
+            <mdui-button id="importConfirmBtn" variant="filled" class="btn-primary" icon="download">导入</mdui-button>
+            <mdui-button id="importCancelBtn" variant="outlined">取消</mdui-button>
+          </div>
+        </div>
+      </section>
+
       <section class="card" aria-labelledby="examListTitle">
         <h2 class="list-title" id="examListTitle">考试列表</h2>
         <div id="examList"></div>
@@ -1523,6 +1662,12 @@ html.mdui-theme-dark .ac-petal { fill: rgb(var(--mdui-color-primary-container));
 <div class="layout-preview-float" id="layoutPreviewFloat" aria-hidden="true">
   <div class="preview-badge">预览 · 100%</div>
   <div class="layout-preview-body" id="layoutPreviewBody"></div>
+</div>
+
+<!-- 拖入考试日程文件时的涟漪动画层（仅计划管理页启用） -->
+<div class="drop-ripple" id="dropRipple" aria-hidden="true">
+  <div class="drop-ripple-mask" id="dropRippleMask"></div>
+  <div class="drop-cursor-glow" id="dropCursorGlow"></div>
 </div>
 
 <script>
@@ -2011,12 +2156,8 @@ function getActiveExam(now) {
 function updateClock() {
   const now = new Date();
   const nowTimeEl = document.getElementById('nowTime');
-  const nowDateEl = document.getElementById('nowDate');
   if (nowTimeEl) nowTimeEl.textContent =
     pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-  if (nowDateEl) nowDateEl.textContent =
-    now.getFullYear() + '/' + pad(now.getMonth()+1) + '/' + pad(now.getDate())
-    + ' ' + ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
 }
 
 function renderMain(exams, now) {
@@ -2140,7 +2281,7 @@ function render() {
 }
 
 /* =========================================================
-   一镜到底：计划管理页（可中断 + 任意方向滑动返回）
+   一镜到底：计划管理页（可中断）
    ========================================================= */
 (function initMorph() {
   const openBtn = document.getElementById('openPlanBtn');
@@ -2152,13 +2293,13 @@ function render() {
   if (!openBtn || !overlay) return;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const DURATION = prefersReducedMotion ? 0 : 650;
-  const RADIUS_TAIL = prefersReducedMotion ? 0 : 260;
-  const RADIUS_DELAY = prefersReducedMotion ? 0 : 120;
-  const RADIUS_HOLD = prefersReducedMotion ? 0 : 48;
-  const RADIUS_LEAD = prefersReducedMotion ? 0 : 80;
-  const RIPPLE_WAIT = prefersReducedMotion ? 0 : 100;
-  const FADE = prefersReducedMotion ? 0 : 80;
+  const DURATION = prefersReducedMotion ? 0 : 360;
+  const RADIUS_TAIL = prefersReducedMotion ? 0 : 150;
+  const RADIUS_DELAY = prefersReducedMotion ? 0 : 60;
+  const RADIUS_HOLD = prefersReducedMotion ? 0 : 30;
+  const RADIUS_LEAD = prefersReducedMotion ? 0 : 50;
+  const RIPPLE_WAIT = prefersReducedMotion ? 0 : 50;
+  const FADE = prefersReducedMotion ? 0 : 50;
   const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
   const FALLBACK_COLOR = '#006463';
 
@@ -2232,7 +2373,7 @@ function render() {
       const finish = () => { if (done) return; done = true; el.removeEventListener('transitionend', handler); resolve(); };
       const handler = (e) => { if (e.target === el && e.propertyName === 'width') finish(); };
       el.addEventListener('transitionend', handler);
-      setTimeout(finish, DURATION + 150);
+      setTimeout(finish, DURATION + 100);
     });
   }
 
@@ -2240,7 +2381,6 @@ function render() {
     const token = ++animToken;
     morphState = 'opening';
     clearRadiusTimer();
-    clearGestureStyles();
 
     const rect = openBtn.getBoundingClientRect();
     const bg = getButtonColor();
@@ -2291,13 +2431,13 @@ function render() {
     overlay.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => { if (token === animToken) overlay.classList.add('content-in'); });
 
-    el.style.transition = 'opacity 280ms ease';
+    el.style.transition = 'opacity 150ms ease';
     el.style.opacity = '0';
     setTimeout(() => {
       if (token !== animToken) return;
       el.style.display = 'none';
       el.classList.remove('visible');
-    }, 300);
+    }, 170);
   }
 
   async function closeAnim(fromInterrupt = false) {
@@ -2306,7 +2446,6 @@ function render() {
     clearRadiusTimer();
     document.body.classList.remove('font-page-open');
     unlockBodyScroll();
-    clearGestureStyles();
 
     overlay.classList.remove('content-in');
     overlay.classList.remove('active');
@@ -2352,12 +2491,12 @@ function render() {
     await waitSize(el);
     if (token !== animToken) return;
 
-    await new Promise((r) => setTimeout(r, DURATION));
+    await new Promise((r) => setTimeout(r, Math.round(DURATION * 0.35)));
     if (token !== animToken) return;
 
-    el.style.transition = 'opacity 180ms ease';
+    el.style.transition = 'opacity 120ms ease';
     el.style.opacity = '0';
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 130));
     if (token !== animToken) return;
 
     el.style.display = 'none';
@@ -2373,12 +2512,12 @@ function render() {
     document.body.classList.remove('font-page-open');
     unlockBodyScroll();
     const el = morphLayer;
-    el.style.transition = 'opacity 120ms ease';
+    el.style.transition = 'opacity 80ms ease';
     el.style.opacity = '0';
     setTimeout(() => {
       el.style.display = 'none';
       el.classList.remove('visible');
-    }, 140);
+    }, 100);
   }
 
   function interrupt() {
@@ -2408,207 +2547,6 @@ function render() {
     if (e.key === 'Escape' && morphState === 'open') closeAnim();
   });
 
-/* =========================================================
-   滑动返回手势（任意方向，未达阈值回弹）
-   ========================================================= */
-const GESTURE_THRESHOLD = 8;
-const GESTURE_COMPLETE_RATIO = 0.25;
-const GESTURE_VELOCITY_THRESHOLD = 0.45;
-const GESTURE_MAX_SCALE_DOWN = 0.85;
-const GESTURE_SCALE_DISTANCE = 260;
-
-let gestureState = null;
-
-function isInteractiveTarget(el) {
-  return el && el.closest && el.closest(
-    'mdui-button, mdui-button-icon, mdui-select, mdui-menu-item, button, input, select, .drag-resizer'
-  );
-}
-
-function clearGestureStyles() {
-  overlay.style.transition = '';
-  overlay.style.transform = '';
-  overlay.style.opacity = '';
-  overlay.style.borderRadius = '';
-  overlay.style.transformOrigin = '';
-  overlay.style.willChange = '';
-  overlay.classList.remove('gesturing');
-}
-
-function onGestureStart(e) {
-  if (morphState !== 'open') return;
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
-  if (isInteractiveTarget(e.target)) return;
-
-  gestureState = {
-    pointerId: e.pointerId,
-    active: false,
-    startX: e.clientX,
-    startY: e.clientY,
-    lastX: e.clientX,
-    lastY: e.clientY,
-    samples: [{ x: e.clientX, y: e.clientY, t: performance.now() }],
-  };
-}
-
-function onGestureMove(e) {
-  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
-
-  const dx = e.clientX - gestureState.startX;
-  const dy = e.clientY - gestureState.startY;
-
-  if (!gestureState.active) {
-    const dist = Math.hypot(dx, dy);
-    if (dist < GESTURE_THRESHOLD) return;
-    gestureState.active = true;
-    overlay.style.transition = 'none';
-    overlay.style.willChange = 'transform, opacity';
-    overlay.classList.add('gesturing');
-    try { overlay.setPointerCapture(e.pointerId); } catch (_) {}
-  }
-
-  e.preventDefault();
-
-  const now = performance.now();
-  gestureState.samples.push({ x: e.clientX, y: e.clientY, t: now });
-  while (gestureState.samples.length > 1 && now - gestureState.samples[0].t > 100) {
-    gestureState.samples.shift();
-  }
-  gestureState.lastX = e.clientX;
-  gestureState.lastY = e.clientY;
-
-  const dist = Math.hypot(dx, dy);
-  const scale = 1 - Math.min(dist / GESTURE_SCALE_DISTANCE, 1) * (1 - GESTURE_MAX_SCALE_DOWN);
-  const maxDim = Math.max(window.innerWidth, window.innerHeight);
-  const opacity = 1 - Math.min(dist / (maxDim * 0.6), 1) * 0.5;
-  const radius = Math.min(dist / 10, 24);
-
-  overlay.style.transformOrigin = 'center center';
-  overlay.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
-  overlay.style.opacity = String(opacity);
-  overlay.style.borderRadius = radius + 'px';
-}
-
-function onGestureEnd(e) {
-  if (!gestureState || e.pointerId !== gestureState.pointerId) return;
-
-  const wasActive = gestureState.active;
-  if (!wasActive) { gestureState = null; return; }
-
-  const dx = gestureState.lastX - gestureState.startX;
-  const dy = gestureState.lastY - gestureState.startY;
-  const dist = Math.hypot(dx, dy);
-  const samples = gestureState.samples;
-  gestureState = null;
-
-  let vx = 0, vy = 0;
-  if (samples.length >= 2) {
-    const first = samples[0];
-    const last = samples[samples.length - 1];
-    const dt = last.t - first.t;
-    if (dt > 0) { vx = (last.x - first.x) / dt; vy = (last.y - first.y) / dt; }
-  }
-  const speed = Math.hypot(vx, vy);
-  const minDim = Math.min(window.innerWidth, window.innerHeight);
-
-  const shouldComplete =
-    dist > minDim * GESTURE_COMPLETE_RATIO ||
-    speed > GESTURE_VELOCITY_THRESHOLD;
-
-  if (shouldComplete) completeGestureClose();
-  else rebounceGesture();
-}
-
-function rebounceGesture() {
-  overlay.style.transition =
-    'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 320ms cubic-bezier(0.22, 1, 0.36, 1)';
-  overlay.style.transform = 'translate(0, 0) scale(1)';
-  overlay.style.opacity = '1';
-  overlay.style.borderRadius = '0px';
-
-  setTimeout(() => {
-    clearGestureStyles();
-  }, 340);
-}
-
-/* 从松手位置变成按钮形状归位 */
-function completeGestureClose() {
-  const token = ++animToken;
-  morphState = 'closing';
-  clearRadiusTimer();
-  document.body.classList.remove('font-page-open');
-  unlockBodyScroll();
-
-  const pageRect = overlay.getBoundingClientRect();
-  const pageStyle = getComputedStyle(overlay);
-  const currentOpacity = parseFloat(pageStyle.opacity) || 1;
-  const currentRadius = parseFloat(pageStyle.borderRadius) || 0;
-
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const startLeft = Math.max(-vw * 0.5, Math.min(vw, pageRect.left));
-  const startTop  = Math.max(-vh * 0.5, Math.min(vh, pageRect.top));
-  const startWidth  = Math.max(1, Math.min(vw * 2, pageRect.width));
-  const startHeight = Math.max(1, Math.min(vh * 2, pageRect.height));
-
-  overlay.classList.remove('content-in');
-  overlay.classList.remove('active');
-  overlay.classList.remove('gesturing');
-  overlay.setAttribute('aria-hidden', 'true');
-
-  const el = morphLayer;
-  const surface = getSurfaceColor();
-  const rect = openBtn.getBoundingClientRect();
-  const bg = getButtonColor();
-  const btnRadius = getButtonRadius(rect);
-
-  el.style.transition = 'none';
-  el.style.display = 'block';
-  el.style.background = surface;
-  el.style.opacity = String(currentOpacity);
-  el.style.left = startLeft + 'px';
-  el.style.top = startTop + 'px';
-  el.style.width = startWidth + 'px';
-  el.style.height = startHeight + 'px';
-  el.style.borderRadius = currentRadius + 'px';
-  void el.offsetWidth;
-
-  el.classList.add('visible');
-  el.style.transition = sizeTransition() + ', ' + radiusTransition(RADIUS_DELAY)
-    + `, background-color ${DURATION * 2}ms ${EASING}`;
-  requestAnimationFrame(() => {
-    if (token !== animToken) return;
-    el.style.left = rect.left + 'px';
-    el.style.top = rect.top + 'px';
-    el.style.width = rect.width + 'px';
-    el.style.height = rect.height + 'px';
-    el.style.borderRadius = btnRadius;
-    el.style.background = bg;
-    el.style.opacity = '1';
-  });
-
-  waitSize(el).then(() => {
-    if (token !== animToken) return;
-    return new Promise((r) => setTimeout(r, DURATION));
-  }).then(() => {
-    if (token !== animToken) return;
-    el.style.transition = 'opacity 150ms ease';
-    el.style.opacity = '0';
-    setTimeout(() => {
-      if (token !== animToken) return;
-      el.style.display = 'none';
-      el.style.transition = '';
-      el.classList.remove('visible');
-      morphState = 'idle';
-      clearGestureStyles();
-    }, 160);
-  });
-}
-
-  overlay.addEventListener('pointerdown', onGestureStart);
-  overlay.addEventListener('pointermove', onGestureMove, { passive: false });
-  overlay.addEventListener('pointerup', onGestureEnd);
-  overlay.addEventListener('pointercancel', onGestureEnd);
 })();
 
 /* =========================================================
@@ -3335,6 +3273,663 @@ function loadPersistSubjectOnBoot() {
   });
 }
 loadPersistSubjectOnBoot();
+
+
+
+
+/* =========================================================
+   导入考试日程
+   - 来源：CSV / TSV / TXT / XLSX 文件，或直接粘贴文本
+   - 表格方向、表头位置、实际内容范围、每列含义全部由用户指定
+   - 程序只按用户的选择组装数据，不自动判断列含义
+   ========================================================= */
+(function initExamImport() {
+  const $ = id => document.getElementById(id);
+  const srcSel = $('importSource');
+  const filePane = $('importFilePane'), textPane = $('importTextPane');
+  const fileInput = $('importFile'), fileNameEl = $('importFileName');
+  const pickBtn = $('importPickBtn'), parseBtn = $('importParseBtn');
+  const parseMsg = $('importParseMsg');
+  const cfg = $('importConfig');
+  const orientSel = $('importOrientation');
+  const headerField = $('importHeaderRow'), startField = $('importStartRow'), endField = $('importEndRow');
+  const columnsBox = $('importColumns'), previewBox = $('importPreview');
+  const resultMsg = $('importResultMsg');
+  const confirmBtn = $('importConfirmBtn'), cancelBtn = $('importCancelBtn');
+  const encSel = $('importEncoding'), sepSel = $('importSep');
+  if (!srcSel || !parseBtn || !cfg) return;
+
+  let rawMatrix = [];      // 解析出的二维表格
+  let fieldMap = [];       // 每个字段列用户指定的类型
+  let parsedRecords = [];  // 当前组装出的考试记录
+
+  const FIELD_TYPES = [
+    ['ignore',  '忽略此列'],
+    ['subject', '科目名称'],
+    ['date',    '日期（年月日）'],
+    ['start',   '开始时间'],
+    ['end',     '结束时间'],
+    ['range',   '起止时间段（如 8:00-10:00）']
+  ];
+
+  function setMsg(el, text, kind) {
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'import-msg' + (kind ? ' ' + kind : '');
+  }
+
+  /* ---------- 来源切换 ---------- */
+  function syncSource() {
+    const v = srcSel && srcSel.value;
+    const isFile = !v || v === 'file';   // 空值兜底为文件
+    if (filePane) filePane.hidden = !isFile;
+    if (textPane) textPane.hidden = isFile;
+  }
+  srcSel.addEventListener('change', syncSource);
+  syncSource();
+
+  if (pickBtn) pickBtn.addEventListener('click', () => fileInput && fileInput.click());
+
+  /* ---------- 文本编码 / 分隔符 ---------- */
+  function decodeText(buf, enc) {
+    const bytes = new Uint8Array(buf);
+    if (enc === 'utf-8') return new TextDecoder('utf-8').decode(bytes);
+    if (enc === 'gb18030') return new TextDecoder('gb18030').decode(bytes);
+    // auto：先按严格 UTF-8 试，失败则 GB18030
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+    catch { return new TextDecoder('gb18030').decode(bytes); }
+  }
+
+  function detectSep(text) {
+    const line = (text.split(/\r?\n/).find(l => l.trim()) || '');
+    const score = s => (line.match(new RegExp(s === '\t' ? '\t' : '\\' + s, 'g')) || []).length;
+    const tabs = score('\t'), commas = score(','), semis = score(';');
+    const max = Math.max(tabs, commas, semis);
+    if (max === 0) return '\t';
+    if (max === tabs) return '\t';
+    if (max === commas) return ',';
+    return ';';
+  }
+
+  function splitDelimited(text, sep) {
+    const rows = [];
+    let row = [], cell = '', quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
+        else quoted = !quoted;
+      } else if (ch === sep && !quoted) {
+        row.push(cell); cell = '';
+      } else if (ch === '\n' && !quoted) {
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else if (ch === '\r' && !quoted) {
+        // 忽略 CR
+      } else {
+        cell += ch;
+      }
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    // 去掉尾部完全空行
+    while (rows.length && rows[rows.length - 1].every(c => String(c).trim() === '')) rows.pop();
+    return rows;
+  }
+
+  /* ---------- 读取来源 → 二维表 ---------- */
+  // mdui-select 是自定义元素，组件未升级或清空时 value 可能读成空串，统一兜底
+  function selValue(el, fallback) {
+    const v = el && el.value;
+    return (v === undefined || v === null || v === '') ? fallback : v;
+  }
+  function chosenSep(text) {
+    const v = selValue(sepSel, 'auto');
+    if (v === 'tab') return '\t';
+    if (v === 'comma') return ',';
+    if (v === 'semicolon') return ';';
+    return detectSep(text);   // auto 或空值 → 自动识别
+  }
+
+  function parseFile(cb, fileOverride) {
+    const f = fileOverride || (fileInput && fileInput.files && fileInput.files[0]);
+    if (!f) { cb(null, '请先选择文件'); return; }
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const reader = new FileReader();
+    reader.onerror = () => cb(null, '文件读取失败');
+    if (ext === 'xlsx' || ext === 'xls') {
+      if (typeof XLSX === 'undefined') { cb(null, 'XLSX 解析组件未加载（src/xlsx.full.min.js）'); return; }
+      reader.readAsArrayBuffer(f);
+      reader.onload = () => {
+        try {
+          const wb = XLSX.read(new Uint8Array(reader.result), { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const arr = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+          cb(arr, null);
+        } catch (e) { cb(null, 'XLSX 解析失败：' + e.message); }
+      };
+    } else {
+      reader.readAsArrayBuffer(f);
+      reader.onload = () => {
+        const text = decodeText(reader.result, selValue(encSel, 'auto'));
+        cb(splitDelimited(text, chosenSep(text)), null);
+      };
+    }
+  }
+
+  function parseFromText(cb) {
+    const tf = $('importText');
+    const text = tf ? (tf.value || '') : '';
+    if (!text.trim()) { cb(null, '请粘贴表格内容'); return; }
+    cb(splitDelimited(text, chosenSep(text)), null);
+  }
+
+  /* ---------- 方向 / 范围 → 统一的字段视图 ---------- */
+  function orientation() { return ((orientSel && orientSel.value) || 'vertical') === 'horizontal' ? 'horizontal' : 'vertical'; }
+  function numOf(el, fallback) {
+    const n = parseInt(el && el.value, 10);
+    return isNaN(n) ? fallback : n;
+  }
+  function dims() {
+    const horizontal = orientation() === 'horizontal';
+    const header = numOf(headerField, 1);
+    const s = numOf(startField, 2), e = numOf(endField, 6);
+    const fieldCount = horizontal ? rawMatrix.length : rawMatrix.reduce((m, r) => Math.max(m, r.length), 0);
+    const lo = Math.min(s, e), hi = Math.max(s, e);
+    const recordCount = Math.max(0, hi - lo + 1);
+    return { horizontal, header, lo, hi, fieldCount, recordCount };
+  }
+  function fieldLabel(f, d) {
+    // 纵向：表头在第 h 行，字段是列 → rawMatrix[h-1][f]
+    // 横向：表头在第 h 列，字段是行 → rawMatrix[f][h-1]
+    const row = d.horizontal ? (rawMatrix[f] || []) : (rawMatrix[d.header - 1] || []);
+    const v = row[d.horizontal ? d.header - 1 : f];
+    return (v && String(v).trim()) || (d.horizontal ? '第 ' + (f + 1) + ' 行' : '第 ' + (f + 1) + ' 列');
+  }
+  function cellAt(r, f, d) {
+    const n = d.lo + r;
+    const v = d.horizontal ? (rawMatrix[f] || [])[n - 1] : (rawMatrix[n - 1] || [])[f];
+    return v === undefined || v === null ? '' : String(v).trim();
+  }
+  function sampleFor(f, d) {
+    const out = [];
+    for (let r = 0; r < Math.min(d.recordCount, 3); r++) {
+      const v = cellAt(r, f, d);
+      if (v) out.push(v);
+    }
+    return out.join(' / ');
+  }
+
+  /* ---------- 日期 / 时间解析 ---------- */
+  function normText(raw) {
+    return String(raw === undefined || raw === null ? '' : raw)
+      .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/：/g, ':').replace(/[－—–～~]/g, '-')
+      .replace(/年|月|日|号/g, '/').trim();
+  }
+  function parseDate(raw) {
+    const s = normText(raw);
+    let m = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+    if (m) return { y: +m[1], mo: +m[2], d: +m[3] };
+    m = s.match(/(?:^|[^\d])(\d{1,2})\/(\d{1,2})(?:\/|$)/);
+    if (m) return { y: new Date().getFullYear(), mo: +m[1], d: +m[2] };
+    return null;
+  }
+  function parseTime(raw) {
+    const s = normText(raw);
+    const m = s.match(/(\d{1,2}):(\d{2})/);
+    if (m) return { h: +m[1], mi: +m[2] };
+    return null;
+  }
+  function parseRange(raw) {
+    const s = normText(raw);
+    const parts = s.split('-').filter(x => x.trim() !== '');
+    if (parts.length >= 2) {
+      const a = parseTime(parts[0]), b = parseTime(parts[1]);
+      if (a && b) return [a, b];
+    }
+    return null;
+  }
+  function makeDT(dateObj, t) {
+    const y = dateObj ? dateObj.y : new Date().getFullYear();
+    const mo = dateObj ? dateObj.mo : new Date().getMonth() + 1;
+    const d = dateObj ? dateObj.d : new Date().getDate();
+    return y + '-' + pad(mo) + '-' + pad(d) + 'T' + pad(t.h) + ':' + pad(t.mi);
+  }
+  function cellDT(raw, fallbackDate) {
+    const dp = parseDate(raw) || fallbackDate;
+    const t = parseTime(raw);
+    return t ? makeDT(dp, t) : null;
+  }
+
+  /* ---------- 按用户指定的列含义组装考试 ---------- */
+  function buildRecords() {
+    const d = dims();
+    const out = [];
+    const errors = [];
+    for (let r = 0; r < d.recordCount; r++) {
+      const vals = { subject: [], date: [], start: [], end: [], range: [] };
+      for (let f = 0; f < d.fieldCount; f++) {
+        const type = fieldMap[f];
+        if (!type || type === 'ignore' || !vals.hasOwnProperty(type)) continue;
+        const v = cellAt(r, f, d);
+        if (v) vals[type].push(v);
+      }
+      if (!vals.subject.length && !vals.start.length && !vals.range.length) continue;
+
+      const name = (vals.subject.find(v => v.trim()) || '').trim();
+      const dateText = vals.date.find(v => parseDate(v)) || '';
+      const baseDate = parseDate(dateText);
+      let start = null, end = null;
+
+      if (vals.range.length) {
+        const rg = parseRange(vals.range[0]);
+        if (rg) {
+          const rd = parseDate(vals.range[0]) || baseDate;
+          start = makeDT(rd, rg[0]);
+          end = makeDT(rd, rg[1]);
+        }
+      }
+      if (!start && vals.start.length) start = cellDT(vals.start[0], baseDate);
+      if (!end && vals.end.length) end = cellDT(vals.end[0], baseDate);
+
+      if (!start) start = cellDT(vals.subject[0] || '', baseDate);
+      if (start && !end) {
+        // 结束时间未指定时，默认开始后 2 小时（仅占位，用户可再编辑）
+        const dt = new Date(start);
+        if (!isNaN(dt.getTime())) {
+          dt.setHours(dt.getHours() + 2);
+          end = dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) +
+                'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+        }
+      }
+
+      if (!name || !start || !end) {
+        errors.push('第 ' + (d.lo + r) + (d.horizontal ? ' 列' : ' 行') + '：缺少' +
+          (!name ? '科目 ' : '') + (!start ? '开始时间 ' : '') + (!end ? '结束时间' : ''));
+        continue;
+      }
+      out.push({ name, start, end });
+    }
+    return { records: out, errors };
+  }
+
+  /* ---------- 渲染用户指定列的下拉 ---------- */
+  function renderColumns() {
+    const d = dims();
+    if (!d.fieldCount) { columnsBox.innerHTML = '<div class="import-msg err">未解析到任何字段</div>'; return; }
+    while (fieldMap.length < d.fieldCount) fieldMap.push('ignore');
+    fieldMap.length = d.fieldCount;
+
+    let html = '';
+    for (let f = 0; f < d.fieldCount; f++) {
+      const label = escapeHtml(fieldLabel(f, d));
+      const sample = escapeHtml(sampleFor(f, d));
+      const opts = FIELD_TYPES.map(([v, t]) =>
+        '<mdui-menu-item value="' + v + '"' + (fieldMap[f] === v ? ' selected' : '') + '>' + t + '</mdui-menu-item>'
+      ).join('');
+      html += '<div class="import-col-item">' +
+        '<div class="import-col-name">' + label + (sample ? '<br><span style="opacity:.7">' + sample + '</span>' : '') + '</div>' +
+        '<mdui-select class="imp-field-type" data-f="' + f + '" variant="outlined" label="这一列是" value="' + fieldMap[f] + '">' +
+        opts + '</mdui-select></div>';
+    }
+    columnsBox.innerHTML = html;
+    columnsBox.querySelectorAll('.imp-field-type').forEach(sel => {
+      sel.addEventListener('change', () => {
+        fieldMap[+sel.dataset.f] = sel.value || 'ignore';
+        renderPreview();
+      });
+    });
+  }
+
+  /* ---------- 渲染预览 ---------- */
+  function renderPreview() {
+    const res = buildRecords();
+    parsedRecords = res.records;
+    let html = '<table><thead><tr><th>科目</th><th>开始</th><th>结束</th></tr></thead><tbody>';
+    if (!parsedRecords.length) {
+      html += '<tr><td colspan="3" style="color:rgb(var(--mdui-color-on-surface-variant))">请在上方为每一列指定含义后查看预览</td></tr>';
+    } else {
+      parsedRecords.slice(0, 12).forEach(x => {
+        html += '<tr><td>' + escapeHtml(x.name) + '</td><td>' + fmtDT(x.start) + '</td><td>' + fmtDT(x.end) + '</td></tr>';
+      });
+    }
+    html += '</tbody></table>';
+    if (parsedRecords.length > 12) html += '<div class="import-msg">仅显示前 12 条，共 ' + parsedRecords.length + ' 条</div>';
+    previewBox.innerHTML = html;
+
+    const msgs = [];
+    if (!parsedRecords.length) msgs.push('尚未生成有效记录。');
+    else msgs.push('可导入 ' + parsedRecords.length + ' 条。');
+    if (res.errors.length) msgs.push('跳过 ' + res.errors.length + ' 行：' + res.errors.slice(0, 3).join('；'));
+    setMsg(resultMsg, msgs.join(' '), parsedRecords.length ? 'ok' : 'err');
+    if (confirmBtn) confirmBtn.disabled = parsedRecords.length === 0;
+  }
+
+  function refreshConfig() {
+    const d = dims();
+    const unit = d.horizontal ? '列' : '行';
+    if (headerField) headerField.setAttribute('label', '表头在第几' + unit);
+    if (startField) startField.setAttribute('label', '实际内容从第几' + unit);
+    if (endField) endField.setAttribute('label', '实际内容到第几' + unit);
+    renderColumns();
+    renderPreview();
+  }
+
+  [orientSel, headerField, startField, endField].forEach(el => {
+    if (!el) return;
+    el.addEventListener('change', refreshConfig);
+    el.addEventListener('input', refreshConfig);
+  });
+
+  /* ---------- 解析（选择文件 / 拖入文件共用） ---------- */
+  function runParse(fileOverride) {
+    const sv = srcSel && srcSel.value;
+    const isFile = !!fileOverride || !sv || sv === 'file';
+    const done = (matrix, err) => {
+      if (err) { setMsg(parseMsg, err, 'err'); cfg.hidden = true; return; }
+      if (!matrix || !matrix.length) { setMsg(parseMsg, '表格内容为空', 'err'); cfg.hidden = true; return; }
+      rawMatrix = matrix;
+      fieldMap = [];
+      setMsg(parseMsg, '已解析 ' + matrix.length + ' 行 × ' +
+        matrix.reduce((m, r) => Math.max(m, r.length), 0) + ' 列，请在下方指定表格结构。', 'ok');
+      cfg.hidden = false;
+      refreshConfig();
+    };
+    if (isFile) parseFile(done, fileOverride); else parseFromText(done);
+  }
+  parseBtn.addEventListener('click', () => runParse());
+
+  if (cancelBtn) cancelBtn.addEventListener('click', () => {
+    cfg.hidden = true;
+    rawMatrix = []; fieldMap = []; parsedRecords = [];
+    setMsg(parseMsg, '');
+  });
+
+  /* ---------- 确认导入（追加到现有日程） ---------- */
+  if (confirmBtn) confirmBtn.addEventListener('click', () => {
+    const res = buildRecords();
+    if (!res.records.length) { mdui.snackbar({ message: '没有可导入的记录' }); return; }
+    const list = getExams();
+    res.records.forEach(x => {
+      list.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: x.name, start: x.start, end: x.end
+      });
+    });
+    saveExams(list);
+    mdui.snackbar({ message: '已导入 ' + res.records.length + ' 条考试日程' });
+    cfg.hidden = true;
+    rawMatrix = []; fieldMap = []; parsedRecords = [];
+    setMsg(parseMsg, '');
+    fileInput && (fileInput.value = '');
+    if (fileNameEl) fileNameEl.textContent = '未选择文件';
+    render();
+  });
+
+  if (fileInput) fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (fileNameEl) fileNameEl.textContent = f ? f.name : '未选择文件';
+    setMsg(parseMsg, '');
+  });
+
+  /* ---------- 拖动文件导入（仅计划管理页） + 涟漪动画 ---------- */
+  const planOverlay = $('planPageOverlay');
+  const dropRipple = $('dropRipple');
+  const dropRippleMask = $('dropRippleMask');
+  const dropCursorGlow = $('dropCursorGlow');
+  const DROP_EXTS = ['csv', 'tsv', 'txt', 'xlsx', 'xls'];
+
+  function isPlanVisible() {
+    return !!(planOverlay && planOverlay.classList.contains('active') &&
+      planOverlay.getAttribute('aria-hidden') !== 'true');
+  }
+  function setSourceToFile() {
+    if (!srcSel) return;
+    try { srcSel.value = 'file'; } catch (_) {}
+    srcSel.setAttribute('value', 'file');
+    const items = srcSel.querySelectorAll('mdui-menu-item');
+    items.forEach(it => {
+      if (it.getAttribute('value') === 'file') it.setAttribute('selected', '');
+      else it.removeAttribute('selected');
+    });
+    syncSource();
+  }
+
+  let rippleDragDepth = 0, ripplePhase = 'idle', rippleRaf = 0;
+  let rippleCX = 0, rippleCY = 0, rippleR = 0;
+  let rippleStartR = 0, rippleStartCX = 0, rippleStartCY = 0;
+  let rippleTargetX = 0, rippleTargetY = 0, rippleStartTime = 0;
+  let glowTimer = null, rippleDelayTimer = null;
+  let lastDragX = 0, lastDragY = 0, lastDragT = 0;
+  let velocityX = 0, velocityY = 0;
+  const VELOCITY_SMOOTH = 0.5, MIN_SPEED = 150;
+  const RIPPLE_DELAY_MS = 80, RIPPLE_EXPAND_MS = 720;
+  const RIPPLE_SHRINK_MS = 520, RIPPLE_COLLAPSE_MS = 640, GLOW_DELAY_MS = 100;
+  const EDGE_FEATHER = 2;
+
+  function resetVelocity() { velocityX = 0; velocityY = 0; lastDragT = 0; }
+  function rippleMaxRadius(x, y) {
+    const w = window.innerWidth, h = window.innerHeight;
+    return Math.max(
+      Math.hypot(x, y), Math.hypot(w - x, y),
+      Math.hypot(x, h - y), Math.hypot(w - x, h - y)
+    );
+  }
+  function easeOutExpo(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+  let rippleLastClip = '', rippleLastMask = '';
+  function applyRippleMask() {
+    if (!dropRippleMask) return;
+    const r = Math.max(0, rippleR);
+
+    // 松手收尾：反向涟漪。深色蒙版保持铺满，但从中挖出随松手点长大的透明圆，
+    // 圆内变清晰、圆外仍是深色；不是再扩散一次同色圆。
+    if (ripplePhase === 'collapse') {
+      const grad = `radial-gradient(circle at ${rippleCX}px ${rippleCY}px,`
+        + ` transparent 0px, transparent ${r}px, #000 ${r + EDGE_FEATHER}px)`;
+      if (grad === rippleLastMask) return;
+      rippleLastMask = grad;
+      rippleLastClip = '';
+      dropRippleMask.style.clipPath = 'none';
+      dropRippleMask.style.webkitMaskImage = grad;
+      dropRippleMask.style.maskImage = grad;
+      return;
+    }
+
+    // 进入/拖动/离开阶段：正向 clip，深色圆从指针处扩散或收回
+    if (rippleLastMask) {
+      rippleLastMask = '';
+      rippleLastClip = '';
+      dropRippleMask.style.webkitMaskImage = '';
+      dropRippleMask.style.maskImage = '';
+    }
+    const clip = `circle(${r}px at ${rippleCX}px ${rippleCY}px)`;
+    if (clip === rippleLastClip) return;
+    rippleLastClip = clip;
+    dropRippleMask.style.clipPath = clip;
+  }
+  function resetRipple() {
+    ripplePhase = 'idle'; rippleRaf = 0; rippleStartTime = 0;
+    rippleLastClip = ''; rippleLastMask = '';
+    if (dropRippleMask) {
+      dropRippleMask.style.clipPath = '';
+      dropRippleMask.style.webkitMaskImage = '';
+      dropRippleMask.style.maskImage = '';
+    }
+    if (dropRipple) dropRipple.classList.remove('visible', 'covered');
+  }
+  function rippleLoop(ts) {
+    if (ripplePhase === 'idle') { rippleRaf = 0; rippleStartTime = 0; return; }
+    if (!rippleStartTime) rippleStartTime = ts;
+    const elapsed = ts - rippleStartTime;
+    if (ripplePhase === 'expand') {
+      const t = Math.min(1, elapsed / RIPPLE_EXPAND_MS);
+      rippleR = easeOutExpo(t) * (rippleMaxRadius(rippleCX, rippleCY) + 60);
+      applyRippleMask();
+      if (t >= 1) { ripplePhase = 'hold'; rippleRaf = 0; rippleStartTime = 0; return; }
+    } else if (ripplePhase === 'hold') {
+      rippleRaf = 0; return;
+    } else if (ripplePhase === 'shrink') {
+      const t = Math.min(1, elapsed / RIPPLE_SHRINK_MS);
+      const eased = easeInOutCubic(t);
+      rippleCX = rippleStartCX + (rippleTargetX - rippleStartCX) * eased;
+      rippleCY = rippleStartCY + (rippleTargetY - rippleStartCY) * eased;
+      rippleR = rippleStartR * (1 - eased);
+      applyRippleMask();
+      if (t >= 1) { resetRipple(); return; }
+    } else if (ripplePhase === 'collapse') {
+      const maxR = rippleMaxRadius(rippleCX, rippleCY) + 90;
+      const t = Math.min(1, elapsed / RIPPLE_COLLAPSE_MS);
+      rippleR = easeOutExpo(t) * maxR;
+      applyRippleMask();
+      if (t >= 1) { resetRipple(); return; }
+    }
+    rippleRaf = requestAnimationFrame(rippleLoop);
+  }
+  function startRippleExpand(x, y) {
+    if (glowTimer) { clearTimeout(glowTimer); glowTimer = null; }
+    ripplePhase = 'expand';
+    rippleCX = x; rippleCY = y; rippleR = 0; rippleStartTime = 0; rippleLastClip = '';
+    lastDragX = x; lastDragY = y; resetVelocity();
+    if (dropRipple) {
+      dropRipple.classList.add('visible');
+      dropRipple.classList.remove('covered');
+    }
+    if (dropCursorGlow) {
+      dropCursorGlow.style.left = x + 'px';
+      dropCursorGlow.style.top = y + 'px';
+    }
+    applyRippleMask();
+    if (!rippleRaf) rippleRaf = requestAnimationFrame(rippleLoop);
+    glowTimer = setTimeout(() => {
+      glowTimer = null;
+      if ((ripplePhase === 'expand' || ripplePhase === 'hold') && dropRipple) {
+        dropRipple.classList.add('covered');
+      }
+    }, GLOW_DELAY_MS);
+  }
+  function updateRippleCursor(x, y) {
+    if ((ripplePhase === 'expand' || ripplePhase === 'hold') && dropCursorGlow) {
+      dropCursorGlow.style.left = x + 'px';
+      dropCursorGlow.style.top = y + 'px';
+    }
+  }
+  function startRippleShrink() {
+    if (ripplePhase === 'idle') { if (dropRipple) dropRipple.classList.remove('visible', 'covered'); return; }
+    if (glowTimer) { clearTimeout(glowTimer); glowTimer = null; }
+    rippleStartCX = rippleCX; rippleStartCY = rippleCY; rippleStartR = rippleR;
+    let ux = 0, uy = 0, hasDir = false;
+    const speed = Math.hypot(velocityX, velocityY);
+    if (speed >= MIN_SPEED) { ux = velocityX / speed; uy = velocityY / speed; hasDir = true; }
+    if (!hasDir) {
+      const dx = lastDragX - rippleStartCX, dy = lastDragY - rippleStartCY;
+      const len = Math.hypot(dx, dy);
+      if (len >= 8) { ux = dx / len; uy = dy / len; hasDir = true; }
+    }
+    if (!hasDir) {
+      const w = window.innerWidth, h = window.innerHeight;
+      const dL = lastDragX, dR = w - lastDragX, dT = lastDragY, dB = h - lastDragY;
+      const minD = Math.min(dL, dR, dT, dB);
+      if (minD === dL) { ux = -1; uy = 0; } else if (minD === dR) { ux = 1; uy = 0; }
+      else if (minD === dT) { ux = 0; uy = -1; } else { ux = 0; uy = 1; }
+    }
+    const screenDiag = Math.hypot(window.innerWidth, window.innerHeight);
+    const slideDist = Math.max(screenDiag * 0.5, rippleStartR * 0.8, 200);
+    rippleTargetX = rippleStartCX + ux * slideDist;
+    rippleTargetY = rippleStartCY + uy * slideDist;
+    ripplePhase = 'shrink'; rippleStartTime = 0;
+    if (dropRipple) dropRipple.classList.remove('covered');
+    applyRippleMask();
+    if (!rippleRaf) rippleRaf = requestAnimationFrame(rippleLoop);
+  }
+  function startRippleCollapse(x, y) {
+    if (ripplePhase === 'idle') { if (dropRipple) dropRipple.classList.remove('visible', 'covered'); return; }
+    if (glowTimer) { clearTimeout(glowTimer); glowTimer = null; }
+    ripplePhase = 'collapse'; rippleCX = x; rippleCY = y; rippleR = 0;
+    rippleStartTime = 0; rippleLastClip = ''; rippleLastMask = '';
+    if (dropRipple) dropRipple.classList.remove('covered');
+    applyRippleMask();
+    if (!rippleRaf) rippleRaf = requestAnimationFrame(rippleLoop);
+  }
+  function isFileDrag(e) {
+    const dt = e.dataTransfer;
+    if (!dt || !dt.types) return false;
+    for (let i = 0; i < dt.types.length; i++) if (dt.types[i] === 'Files') return true;
+    return false;
+  }
+
+  window.addEventListener('dragenter', (e) => {
+    if (!isFileDrag(e)) return;
+    if (!isPlanVisible()) { e.preventDefault(); return; }
+    e.preventDefault();
+    rippleDragDepth++;
+    if (rippleDragDepth === 1) {
+      const startX = e.clientX, startY = e.clientY;
+      if (rippleDelayTimer) clearTimeout(rippleDelayTimer);
+      rippleDelayTimer = setTimeout(() => {
+        rippleDelayTimer = null;
+        if (isPlanVisible()) startRippleExpand(startX, startY);
+      }, RIPPLE_DELAY_MS);
+    }
+  });
+  window.addEventListener('dragover', (e) => {
+    if (!isFileDrag(e)) return;
+    if (!isPlanVisible()) { e.preventDefault(); return; }
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    const now = performance.now();
+    if (lastDragT > 0) {
+      const dt = (now - lastDragT) / 1000;
+      if (dt > 0.001 && dt < 0.3) {
+        velocityX = velocityX * VELOCITY_SMOOTH + ((e.clientX - lastDragX) / dt) * (1 - VELOCITY_SMOOTH);
+        velocityY = velocityY * VELOCITY_SMOOTH + ((e.clientY - lastDragY) / dt) * (1 - VELOCITY_SMOOTH);
+      }
+    }
+    lastDragT = now; lastDragX = e.clientX; lastDragY = e.clientY;
+    updateRippleCursor(e.clientX, e.clientY);
+  });
+  window.addEventListener('dragleave', (e) => {
+    if (!isFileDrag(e)) return;
+    if (!isPlanVisible()) { e.preventDefault(); return; }
+    rippleDragDepth = Math.max(0, rippleDragDepth - 1);
+    if (rippleDragDepth === 0) {
+      if (rippleDelayTimer) { clearTimeout(rippleDelayTimer); rippleDelayTimer = null; return; }
+      startRippleShrink();
+    }
+  });
+  window.addEventListener('drop', (e) => {
+    if (!isFileDrag(e)) return;
+    if (!isPlanVisible()) { e.preventDefault(); return; }
+    e.preventDefault();
+    rippleDragDepth = 0;
+    if (rippleDelayTimer) { clearTimeout(rippleDelayTimer); rippleDelayTimer = null; }
+    startRippleCollapse(e.clientX, e.clientY);
+
+    const files = e.dataTransfer && e.dataTransfer.files;
+    const file = files && files[0];
+    if (!file) return;
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!DROP_EXTS.includes(ext)) {
+      const msg = '仅支持 CSV / TSV / TXT / XLSX / XLS 文件';
+      setMsg(parseMsg, msg, 'err');
+      if (window.mdui && mdui.snackbar) mdui.snackbar({ message: msg });
+      return;
+    }
+    setSourceToFile();
+    if (fileNameEl) fileNameEl.textContent = file.name;
+    setMsg(parseMsg, '');
+    runParse(file);
+  });
+  window.addEventListener('resize', () => {
+    if (ripplePhase === 'expand' || ripplePhase === 'hold') {
+      rippleR = rippleMaxRadius(rippleCX, rippleCY) + 60;
+      applyRippleMask();
+    }
+  });
+})();
+
+
 /* =========================================================
    定时更新
    ========================================================= */
