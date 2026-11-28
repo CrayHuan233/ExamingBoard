@@ -213,6 +213,9 @@ body.font-page-open { overflow: hidden; }
   gap: 10px;
   margin-bottom: 14px;
 }
+.cd-row[hidden],
+.focus-cd-row[hidden],
+.focus-pip-cd[hidden] { display: none; }
 .cd-unit {
   display: flex;
   flex-direction: column;
@@ -231,12 +234,12 @@ body.font-page-open { overflow: hidden; }
   font-size: 40px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: rgb(var(--mdui-color-primary));
+  color: rgb(var(--mdui-color-on-surface));
   line-height: 1.1;
   font-family: inherit;
 }
 .cd-num.urgent  { color: var(--exam-urgent); }
-.cd-num.running { color: rgb(var(--mdui-color-primary)); }
+.cd-num.running { color: rgb(var(--mdui-color-on-surface)); }
 .cd-num.ended   { color: var(--exam-ended); }
 .cd-text {
   font-size: 12px;
@@ -260,19 +263,43 @@ body.font-page-open { overflow: hidden; }
 }
 
 /* ========== 计划管理页 ========== */
-.plan-header {
+.plan-name-card { margin-bottom: 14px; }
+.plan-name-card mdui-text-field { width: 100%; }
+.reminder-list {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.reminder-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(110px, .8fr) minmax(110px, .7fr) minmax(180px, 1.6fr) auto;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  border-radius: 14px;
+  background: rgb(var(--mdui-color-surface-container-low));
 }
-.back-btn {
-  flex: 0 0 auto;
+.reminder-row mdui-select,
+.reminder-row mdui-text-field {
+  width: 100%;
+  min-width: 0;
+  --mdui-shape-corner-extra-small: 12px;
+  --mdui-typescale-body-large-size: 14px;
 }
-.page-title {
-  font-size: 19px;
-  font-weight: 700;
-  color: rgb(var(--mdui-color-on-surface));
+.reminder-row mdui-select::part(text-field),
+.reminder-row mdui-text-field { height: 44px; }
+.reminder-add-button { margin-top: 12px; }
+.plan-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.plan-actions mdui-button { min-width: 0; }
+@media (max-width: 520px) {
+  .plan-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reminder-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reminder-content-field { grid-column: 1 / -1; }
 }
 .form-row {
   display: flex;
@@ -465,8 +492,10 @@ body.font-page-open { overflow: hidden; }
 .day-add-subject { width: 100%; margin-top: 10px; }
 .day-add-subject.is-hidden { display: none !important; }
 .add-exam-day-column {
-  flex: 0 0 170px;
+  flex: 0 0 min(300px, calc(100vw - 72px));
   margin-top: 14px;
+  height: 82px;
+  border-radius: 16px;
 }
 
 /* ========== 一镜到底层 ========== */
@@ -538,6 +567,80 @@ body.font-page-open { overflow: hidden; }
               visibility 0s linear 0s;
 }
 
+.reminder-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: clamp(16px, 3vw, 32px);
+  background: #036B6C;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.reminder-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.reminder-overlay.fading {
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+.reminder-progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.reminder-progress-path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 15px;
+  stroke-linecap: butt;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+  vector-effect: non-scaling-stroke;
+}
+.reminder-overlay.active .reminder-progress-path {
+  animation: reminder-ring-shrink 15s linear forwards;
+}
+@keyframes reminder-ring-shrink {
+  to { stroke-dasharray: 0 1; }
+}
+.reminder-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2.5vh, 24px);
+  width: min(90vw, 1000px);
+  max-height: 82vh;
+  text-align: center;
+  color: #fff;
+}
+.reminder-beijing-time {
+  font-size: clamp(14px, 2.5vw, 22px);
+  font-variant-numeric: tabular-nums;
+}
+.reminder-title {
+  font-size: clamp(34px, 8vw, 76px);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.reminder-message {
+  font-size: clamp(20px, 4vw, 36px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.reminder-message[hidden] { display: none; }
+
 .focus-main {
   position: absolute;
   left: 50%;
@@ -601,12 +704,12 @@ body.font-page-open { overflow: hidden; }
   font-size: clamp(28px, 7vw, 64px);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: rgb(var(--mdui-color-primary));
+  color: rgb(var(--mdui-color-on-surface));
   line-height: 1.1;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
 .focus-cd-num.urgent  { color: var(--exam-urgent); }
-.focus-cd-num.running { color: rgb(var(--mdui-color-primary)); }
+.focus-cd-num.running { color: rgb(var(--mdui-color-on-surface)); }
 .focus-cd-num.ended   { color: var(--exam-ended); }
 .focus-cd-text {
   font-size: clamp(11px, 1.6vw, 15px);
@@ -688,12 +791,12 @@ body.font-page-open { overflow: hidden; }
   font-size: 15px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: rgb(var(--mdui-color-primary));
+  color: rgb(var(--mdui-color-on-surface));
   white-space: nowrap;
   font-family: 'XiaolaiMono', 'Consolas', 'Menlo', monospace;
 }
 .focus-pip-cd.urgent  { color: var(--exam-urgent); }
-.focus-pip-cd.running { color: rgb(var(--mdui-color-primary)); }
+.focus-pip-cd.running { color: rgb(var(--mdui-color-on-surface)); }
 .focus-pip-cd.ended   { color: var(--exam-ended); }
 .focus-pip-status {
   font-size: 11px;
@@ -769,6 +872,11 @@ body.font-page-open { overflow: hidden; }
   }
   #dashboardPage .round-clock {
     width: min(100%, 460px);
+  }
+  #dashboardPage #examCountdown {
+    grid-column: 2;
+    grid-row: 1 / 5;
+    align-self: center;
   }
   #dashboardPage .divider {
     display: none;
@@ -869,7 +977,7 @@ body.font-page-open { overflow: hidden; }
 <mdui-top-app-bar class="app-top-bar" variant="small" scroll-behavior="shrink elevate">
   <div class="brand">
     <img class="brand-logo" src="https://chn.picui.cn/8997/2026/11/21/6b01561562035.png" alt="考试看板标识">
-    <mdui-top-app-bar-title>| 考试看板</mdui-top-app-bar-title>
+    <mdui-top-app-bar-title>| 合六考试看板</mdui-top-app-bar-title>
   </div>
   <div style="flex-grow: 1"></div>
   <div class="top-bar-actions">
@@ -897,14 +1005,16 @@ body.font-page-open { overflow: hidden; }
         </svg>
       </div>
       <div class="divider"></div>
-      <div class="main-label" id="mainLabel">当前状态</div>
-      <div class="main-name waiting" id="mainName">暂无考试安排</div>
-      <div class="cd-row" id="cdRow">
-        <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
+      <div id="examCountdown">
+        <div class="main-label" id="mainLabel">当前状态</div>
+        <div class="main-name waiting" id="mainName">暂无考试安排</div>
+        <div class="cd-row" id="cdRow">
+          <div class="cd-unit"><div class="cd-num" id="cdB">00</div><div class="cd-text" id="cdBT">时</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdC">00</div><div class="cd-text" id="cdCT">分</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdD">00</div><div class="cd-text" id="cdDT">秒</div></div>
+        </div>
+        <div class="status" id="status">请添加考试</div>
       </div>
-      <div class="status" id="status">请添加考试</div>
     </div>
   </main>
 </div>
@@ -946,17 +1056,36 @@ body.font-page-open { overflow: hidden; }
   </div>
 </div>
 
+<div id="reminderOverlay" class="reminder-overlay" aria-hidden="true" role="alert">
+  <svg id="reminderProgress" class="reminder-progress" aria-hidden="true" preserveAspectRatio="none">
+    <path id="reminderProgressPath" class="reminder-progress-path" pathLength="1"></path>
+  </svg>
+  <div class="reminder-content">
+    <div id="reminderBeijingTime" class="reminder-beijing-time"></div>
+    <div id="reminderTitle" class="reminder-title"></div>
+    <div id="reminderMessage" class="reminder-message" hidden></div>
+  </div>
+</div>
+
 <!-- ==================== 计划管理副页面（一镜到底目标） ==================== -->
 <div id="planPageOverlay" class="plan-page-overlay" aria-hidden="true">
   <div class="plan-page-content">
     <div class="plan-inner">
-      <div class="plan-header">
-        <mdui-button-icon id="planCloseBtn" class="back-btn" icon="arrow_back" title="返回"></mdui-button-icon>
-        <h1 class="page-title">考试计划管理</h1>
+      <div class="plan-actions" aria-label="考试计划操作">
+        <mdui-button id="savePlanAsBtn" variant="outlined" icon="download">另存为</mdui-button>
+        <mdui-button id="importPlanBtn" variant="outlined" icon="upload">导入</mdui-button>
+        <mdui-button id="cancelPlanBtn" variant="outlined">取消</mdui-button>
+        <mdui-button id="savePlanBtn" variant="filled" icon="save">保存</mdui-button>
       </div>
+      <input id="importPlanFileInput" type="file" accept=".json,application/json" hidden>
+
+      <section class="card plan-name-card" aria-labelledby="planNameTitle">
+        <h2 class="list-title" id="planNameTitle">考试名称</h2>
+        <mdui-text-field id="planNameInput" label="考试计划名称" variant="outlined" placeholder="如：期中考试"></mdui-text-field>
+      </section>
 
       <section class="card" aria-labelledby="examListTitle">
-        <h2 class="list-title" id="examListTitle">考试列表</h2>
+        <h2 class="list-title" id="examListTitle">时间表</h2>
         <div id="examDays"></div>
         <mdui-select id="subjectSelect" variant="outlined" label="科目" style="display:none" aria-hidden="true">
           <mdui-menu-item value="语文">语文</mdui-menu-item>
@@ -972,6 +1101,11 @@ body.font-page-open { overflow: hidden; }
         </mdui-select>
       </section>
 
+      <section class="card plan-reminder-card" aria-labelledby="planReminderTitle">
+        <h2 class="list-title" id="planReminderTitle">提醒</h2>
+        <div id="planRemindersList" class="reminder-list"></div>
+        <mdui-button id="addReminderBtn" class="reminder-add-button" variant="tonal" icon="add">添加提醒</mdui-button>
+      </section>
     </div>
   </div>
 </div>
@@ -1026,8 +1160,62 @@ document.addEventListener('fullscreenchange', () => {
    考试数据逻辑
    ========================================================= */
 const KEY = 'exam_schedule_v2';
+const PLAN_META_KEY = 'exam_plan_meta_v1';
+const DEFAULT_PLAN_NAME = '考试计划';
+const DEFAULT_REMINDERS = [
+  { event: 'start', relation: 'before', minutes: 15, content: '' },
+  { event: 'start', relation: 'at', minutes: 0, content: '' },
+  { event: 'end', relation: 'before', minutes: 15, content: '' },
+  { event: 'end', relation: 'at', minutes: 0, content: '' },
+];
 
 function pad(n) { return String(n).padStart(2, '0'); }
+
+function getDefaultReminders() {
+  return DEFAULT_REMINDERS.map(reminder => ({ ...reminder }));
+}
+
+function normalizeReminderList(reminders) {
+  if (!Array.isArray(reminders)) throw new Error('提醒列表格式无效');
+  return reminders.map((reminder, index) => {
+    if (!reminder || typeof reminder !== 'object'
+      || !['start', 'end'].includes(reminder.event)
+      || !['before', 'after', 'at'].includes(reminder.relation)
+      || (reminder.content !== undefined && typeof reminder.content !== 'string')) {
+      throw new Error(`第 ${index + 1} 条提醒格式无效`);
+    }
+    const minutes = reminder.relation === 'at' ? 0 : Number(reminder.minutes);
+    if (reminder.relation !== 'at' && (!Number.isInteger(minutes) || minutes < 1)) {
+      throw new Error(`第 ${index + 1} 条提醒的分钟数必须为正整数`);
+    }
+    return {
+      event: reminder.event,
+      relation: reminder.relation,
+      minutes,
+      content: reminder.content || '',
+    };
+  });
+}
+
+function getPlanMetadata() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PLAN_META_KEY));
+    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+      return {
+        name: typeof stored.name === 'string' && stored.name.trim() ? stored.name.trim() : DEFAULT_PLAN_NAME,
+        reminders: stored.reminders === undefined
+          || (stored.version !== 2 && Array.isArray(stored.reminders) && stored.reminders.length === 0)
+          ? getDefaultReminders()
+          : normalizeReminderList(stored.reminders),
+      };
+    }
+  } catch {}
+  return { name: DEFAULT_PLAN_NAME, reminders: getDefaultReminders() };
+}
+
+function savePlanMetadata(metadata) {
+  localStorage.setItem(PLAN_META_KEY, JSON.stringify({ ...metadata, version: 2 }));
+}
 
 function getExams() {
   try {
@@ -1040,11 +1228,164 @@ function saveExams(list) {
   localStorage.setItem(KEY, JSON.stringify(list));
 }
 
+function parseImportedPlan(value) {
+  let name = DEFAULT_PLAN_NAME;
+  let exams;
+  let reminders = getDefaultReminders();
+
+  if (Array.isArray(value)) {
+    exams = value;
+  } else if (value && typeof value === 'object' && Array.isArray(value.exams)) {
+    if (value.name !== undefined && typeof value.name !== 'string') {
+      throw new Error('考试名称格式无效');
+    }
+    if (value.reminders !== undefined && !Array.isArray(value.reminders)) {
+      throw new Error('提醒设置格式无效');
+    }
+    name = typeof value.name === 'string' && value.name.trim() ? value.name.trim() : DEFAULT_PLAN_NAME;
+    if (value.reminders !== undefined) {
+      const importedReminders = normalizeReminderList(value.reminders);
+      reminders = value.version === 2 || importedReminders.length > 0
+        ? importedReminders
+        : getDefaultReminders();
+    }
+    exams = value.exams;
+  } else {
+    throw new Error('文件中未找到有效的考试时间表');
+  }
+
+  const normalizedExams = exams.map((exam, index) => {
+    if (!exam || typeof exam !== 'object'
+      || typeof exam.name !== 'string' || !exam.name.trim()
+      || typeof exam.start !== 'string' || typeof exam.end !== 'string') {
+      throw new Error(`第 ${index + 1} 项考试信息不完整`);
+    }
+    const start = new Date(exam.start);
+    const end = new Date(exam.end);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+      throw new Error(`第 ${index + 1} 项考试时间无效`);
+    }
+    return {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + index.toString(36),
+      name: exam.name.trim(),
+      start: exam.start,
+      end: exam.end,
+    };
+  });
+
+  return { name, exams: normalizedExams, reminders };
+}
+
 function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
 }
+
+function escapeHtmlAttribute(s) {
+  return escapeHtml(String(s)).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const reminderOverlay = document.getElementById('reminderOverlay');
+const reminderProgress = document.getElementById('reminderProgress');
+const reminderProgressPath = document.getElementById('reminderProgressPath');
+const reminderBeijingTime = document.getElementById('reminderBeijingTime');
+const reminderTitle = document.getElementById('reminderTitle');
+const reminderMessage = document.getElementById('reminderMessage');
+const reminderQueue = [];
+const firedReminderKeys = new Set();
+const beijingTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  timeZone: 'Asia/Shanghai',
+  timeStyle: 'medium',
+});
+let reminderIsActive = false;
+let reminderClockTimer = null;
+let reminderLastCheckedAt = Date.now();
+
+function updateReminderProgressPath() {
+  const width = Math.max(16, window.innerWidth);
+  const height = Math.max(16, window.innerHeight);
+  const inset = 7.5;
+  const radius = Math.max(0, Math.min(20.5, (width - inset * 2) / 2, (height - inset * 2) / 2));
+  reminderProgress.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  reminderProgressPath.setAttribute('d',
+    `M ${width / 2} ${inset} H ${width - inset - radius}`
+      + ` Q ${width - inset} ${inset} ${width - inset} ${inset + radius}`
+      + ` V ${height - inset - radius}`
+      + ` Q ${width - inset} ${height - inset} ${width - inset - radius} ${height - inset}`
+      + ` H ${inset + radius}`
+      + ` Q ${inset} ${height - inset} ${inset} ${height - inset - radius}`
+      + ` V ${inset + radius}`
+      + ` Q ${inset} ${inset} ${inset + radius} ${inset}`
+      + ` H ${width / 2}`);
+}
+
+function updateReminderClock() {
+  reminderBeijingTime.textContent = '北京时间 ' + beijingTimeFormatter.format(new Date());
+}
+
+function showNextReminder() {
+  if (reminderIsActive || reminderQueue.length === 0) return;
+  const reminder = reminderQueue.shift();
+  reminderIsActive = true;
+  reminderOverlay.classList.remove('active', 'fading');
+  updateReminderProgressPath();
+  reminderProgressPath.style.animation = 'none';
+  void reminderProgress.getBoundingClientRect();
+  reminderProgressPath.style.animation = '';
+  updateReminderClock();
+  reminderClockTimer = setInterval(updateReminderClock, 1000);
+  reminderTitle.textContent = reminder.examName + ' · ' + reminder.title;
+  reminderMessage.textContent = reminder.content;
+  reminderMessage.hidden = !reminder.content;
+  reminderOverlay.setAttribute('aria-hidden', 'false');
+  reminderOverlay.classList.add('active');
+
+  setTimeout(() => {
+    reminderOverlay.classList.add('fading');
+    setTimeout(() => {
+      reminderOverlay.classList.remove('active', 'fading');
+      reminderOverlay.setAttribute('aria-hidden', 'true');
+      clearInterval(reminderClockTimer);
+      reminderClockTimer = null;
+      reminderIsActive = false;
+      showNextReminder();
+    }, 500);
+  }, 15000);
+}
+
+function checkDueReminders(now) {
+  if (document.hidden) return;
+  const previousCheck = reminderLastCheckedAt;
+  reminderLastCheckedAt = now;
+  if (now <= previousCheck) return;
+
+  const reminders = getPlanMetadata().reminders;
+  if (reminders.length === 0) return;
+  const exams = createExamSnapshot(now).exams;
+
+  exams.forEach((exam, examIndex) => {
+    reminders.forEach((reminder, reminderIndex) => {
+      const eventTime = reminder.event === 'start' ? exam.startMs : exam.endMs;
+      const offset = reminder.relation === 'before' ? -1 : reminder.relation === 'after' ? 1 : 0;
+      const triggerAt = eventTime + offset * reminder.minutes * 60000;
+      const key = `${exam.id}:${examIndex}:${reminderIndex}:${triggerAt}`;
+      if (triggerAt <= previousCheck || triggerAt > now || firedReminderKeys.has(key)) return;
+      firedReminderKeys.add(key);
+
+      const eventName = reminder.event === 'start' ? '考试开始' : '考试结束';
+      const title = reminder.relation === 'at'
+        ? eventName
+        : reminder.relation === 'before'
+          ? `距${eventName}还有${reminder.minutes}分钟`
+          : `${eventName}已过${reminder.minutes}分钟`;
+      reminderQueue.push({ examName: exam.name, title, content: reminder.content });
+    });
+  });
+  showNextReminder();
+}
+
+window.addEventListener('resize', updateReminderProgressPath);
 
 function getPhase(startMs, endMs, now) {
   if (now < startMs) return 'waiting';
@@ -1069,16 +1410,16 @@ function getExamProgress(exam, now) {
       parts,
       label: '距离考试开始',
       status: '倒计时中',
-      urgent: parts.hrs === 0 && parts.mins < 30,
+      urgent: exam.startMs - now < 15 * 60 * 1000,
     };
   }
   if (phase === 'running') {
     return {
       phase,
-      parts: diffParts(now - exam.startMs),
-      label: '考试进行中',
-      status: '已开始，计时中',
-      urgent: false,
+      parts: diffParts(exam.endMs - now),
+      label: '距离考试结束',
+      status: '考试进行中，剩余时间',
+      urgent: exam.endMs - now < 15 * 60 * 1000,
     };
   }
   return {
@@ -1109,12 +1450,17 @@ function createExamSnapshot(now) {
       && ex.endMs > ex.startMs)
     .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 
-  const running = exams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'running');
-  const upcoming = exams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'waiting');
-  const mostRecentlyEnded = exams
-    .filter(ex => getPhase(ex.startMs, ex.endMs, now) === 'ended')
-    .sort((a, b) => b.endMs - a.endMs)[0];
-  const target = running || upcoming || mostRecentlyEnded || null;
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+  const todayUnfinishedExams = exams.filter(ex =>
+    ex.endMs > now
+      && ex.startMs < startOfTomorrow.getTime()
+      && ex.endMs > startOfToday.getTime());
+  const running = todayUnfinishedExams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'running');
+  const upcoming = todayUnfinishedExams.find(ex => getPhase(ex.startMs, ex.endMs, now) === 'waiting');
+  const target = running || upcoming || null;
 
   return {
     exams,
@@ -1145,6 +1491,7 @@ function updateClock() {
 }
 
 function renderMain(snapshot) {
+  const cdRow = document.getElementById('cdRow');
   const mainName  = document.getElementById('mainName');
   const mainLabel = document.getElementById('mainLabel');
   const status    = document.getElementById('status');
@@ -1155,6 +1502,7 @@ function renderMain(snapshot) {
   const cdCT = document.getElementById('cdCT');
   const cdDT = document.getElementById('cdDT');
   if (!mainName) return;
+  cdRow.hidden = !snapshot.target;
 
   if (!snapshot.target) {
     mainName.textContent = '暂无考试安排';
@@ -1183,7 +1531,7 @@ function renderMain(snapshot) {
   cdCT.textContent = '分';
   cdDT.textContent = '秒';
   [cdB, cdC, cdD].forEach(e => {
-    e.className = 'cd-num' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
+    e.className = 'cd-num' + (urgent ? ' urgent' : phase === 'running' ? ' running' : '');
   });
 }
 
@@ -1192,6 +1540,7 @@ function render() {
   const snapshot = createExamSnapshot(now);
   renderMain(snapshot);
   if (focusMode.active) renderFocus(snapshot, now);
+  checkDueReminders(now);
 }
 
 let countdownRenderTimer = null;
@@ -1218,10 +1567,17 @@ document.addEventListener('visibilitychange', () => {
    ========================================================= */
 (function initMorph() {
   const openBtn = document.getElementById('openPlanBtn');
-  const closeBtn = document.getElementById('planCloseBtn');
   const overlay = document.getElementById('planPageOverlay');
   const content = overlay.querySelector('.plan-page-content');
   const morphLayer = document.getElementById('morphLayer');
+  const planNameInput = document.getElementById('planNameInput');
+  const savePlanBtn = document.getElementById('savePlanBtn');
+  const savePlanAsBtn = document.getElementById('savePlanAsBtn');
+  const importPlanBtn = document.getElementById('importPlanBtn');
+  const cancelPlanBtn = document.getElementById('cancelPlanBtn');
+  const importFileInput = document.getElementById('importPlanFileInput');
+  const remindersList = document.getElementById('planRemindersList');
+  const addReminderBtn = document.getElementById('addReminderBtn');
 
   if (!openBtn || !overlay) return;
 
@@ -1238,6 +1594,8 @@ document.addEventListener('visibilitychange', () => {
   let morphState = 'idle';
   let animToken = 0;
   let radiusTimer = null;
+  let editSnapshot = null;
+  let draftReminders = [];
 
   function getButtonColor() {
     const cs = getComputedStyle(openBtn);
@@ -1407,11 +1765,259 @@ document.addEventListener('visibilitychange', () => {
     morphState = 'idle';
   }
 
-  openBtn.addEventListener('click', openAnim);
-  closeBtn.addEventListener('click', closeAnim);
+  function showPlanError(error) {
+    console.error('考试计划操作失败', error);
+    mdui.snackbar({ message: error instanceof Error ? error.message : '考试计划操作失败，请重试' });
+  }
+
+  function sortDraftReminders() {
+    const relativeMinutes = reminder => {
+      if (reminder.relation === 'at') return 0;
+      const minutes = Number(reminder.minutes);
+      if (!Number.isFinite(minutes)) return Number.POSITIVE_INFINITY;
+      return reminder.relation === 'before' ? -minutes : minutes;
+    };
+    const rowsByReminder = new Map(
+      Array.from(remindersList.querySelectorAll('.reminder-row'))
+        .map(row => [draftReminders[Number(row.dataset.reminderIndex)], row]),
+    );
+
+    draftReminders.sort((a, b) => {
+      const eventOrder = (a.event === 'start' ? 0 : 1) - (b.event === 'start' ? 0 : 1);
+      if (eventOrder !== 0) return eventOrder;
+
+      const aOffset = relativeMinutes(a);
+      const bOffset = relativeMinutes(b);
+      return aOffset === bOffset ? 0 : aOffset - bOffset;
+    });
+
+    draftReminders.forEach((reminder, index) => {
+      const row = rowsByReminder.get(reminder);
+      if (!row) return;
+      row.dataset.reminderIndex = String(index);
+      const currentRow = remindersList.children[index];
+      if (currentRow !== row) remindersList.insertBefore(row, currentRow || null);
+    });
+  }
+
+  function renderReminderRows() {
+    sortDraftReminders();
+    remindersList.innerHTML = draftReminders.map((reminder, index) => `
+      <div class="reminder-row" data-reminder-index="${index}">
+        <mdui-select label="时间节点" variant="outlined" value="${escapeHtmlAttribute(reminder.event)}" data-reminder-field="event">
+          <mdui-menu-item value="start">开始</mdui-menu-item>
+          <mdui-menu-item value="end">结束</mdui-menu-item>
+        </mdui-select>
+        <mdui-select label="触发时机" variant="outlined" value="${escapeHtmlAttribute(reminder.relation)}" data-reminder-field="relation">
+          <mdui-menu-item value="before">前</mdui-menu-item>
+          <mdui-menu-item value="after">后</mdui-menu-item>
+          <mdui-menu-item value="at">时</mdui-menu-item>
+        </mdui-select>
+        <mdui-text-field label="分钟" variant="outlined" type="number" min="1"
+          value="${reminder.relation === 'at' ? '' : reminder.minutes}" data-reminder-field="minutes"
+          ${reminder.relation === 'at' ? 'disabled' : ''}></mdui-text-field>
+        <mdui-text-field class="reminder-content-field" label="提示内容（可空）" variant="outlined"
+          value="${escapeHtmlAttribute(reminder.content)}" data-reminder-field="content"></mdui-text-field>
+        <mdui-button-icon class="delete-reminder-button" icon="delete_outline"
+          title="删除提醒" aria-label="删除提醒"></mdui-button-icon>
+      </div>
+    `).join('');
+  }
+
+  function beginEditing() {
+    try {
+      editSnapshot = {
+        schedule: localStorage.getItem(KEY),
+        metadata: localStorage.getItem(PLAN_META_KEY),
+      };
+      const metadata = getPlanMetadata();
+      planNameInput.value = metadata.name;
+      draftReminders = metadata.reminders.map(reminder => ({ ...reminder }));
+      renderReminderRows();
+      return true;
+    } catch (error) {
+      showPlanError(error);
+      return false;
+    }
+  }
+
+  function returnToHome() {
+    void closeAnim();
+  }
+
+  function cancelEditing() {
+    if (editSnapshot) {
+      try {
+        if (editSnapshot.schedule === null) localStorage.removeItem(KEY);
+        else localStorage.setItem(KEY, editSnapshot.schedule);
+        if (editSnapshot.metadata === null) localStorage.removeItem(PLAN_META_KEY);
+        else localStorage.setItem(PLAN_META_KEY, editSnapshot.metadata);
+        editSnapshot = null;
+        draftReminders = getPlanMetadata().reminders.map(reminder => ({ ...reminder }));
+        renderReminderRows();
+        syncExamDayRecords();
+        renderExamDays();
+        render();
+      } catch (error) {
+        showPlanError(error);
+        return;
+      }
+    }
+    returnToHome();
+  }
+
+  function getPlanForSave() {
+    const name = planNameInput.value.trim();
+    if (!name) throw new Error('请输入考试计划名称');
+    return { name, exams: getExams(), reminders: normalizeReminderList(draftReminders) };
+  }
+
+  function commitPlan() {
+    const plan = getPlanForSave();
+    savePlanMetadata({ name: plan.name, reminders: plan.reminders });
+    planNameInput.value = plan.name;
+    editSnapshot = null;
+    return plan;
+  }
+
+  function exportPlan() {
+    const plan = getPlanForSave();
+    const payload = { version: 2, ...plan };
+    const filename = plan.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').replace(/[. ]+$/g, '') || DEFAULT_PLAN_NAME;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    try {
+      savePlanMetadata({ name: plan.name, reminders: plan.reminders });
+      planNameInput.value = plan.name;
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename + '.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      editSnapshot = null;
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  }
+
+  openBtn.addEventListener('click', () => {
+    if (beginEditing()) void openAnim();
+  });
+  cancelPlanBtn.addEventListener('click', cancelEditing);
+
+  savePlanBtn.addEventListener('click', () => {
+    try {
+      commitPlan();
+      returnToHome();
+    } catch (error) {
+      showPlanError(error);
+    }
+  });
+
+  savePlanAsBtn.addEventListener('click', () => {
+    try {
+      exportPlan();
+      returnToHome();
+    } catch (error) {
+      showPlanError(error);
+    }
+  });
+
+  importPlanBtn.addEventListener('click', () => importFileInput.click());
+  addReminderBtn.addEventListener('click', () => {
+    draftReminders.push({ event: 'start', relation: 'before', minutes: 15, content: '' });
+    renderReminderRows();
+  });
+  remindersList.addEventListener('change', (event) => {
+    const field = event.target.closest('[data-reminder-field]');
+    const row = field?.closest('.reminder-row');
+    if (!field || !row) return;
+    const reminder = draftReminders[Number(row.dataset.reminderIndex)];
+    if (!reminder) return;
+
+    const name = field.dataset.reminderField;
+    if (name === 'event') reminder.event = field.value;
+    if (name === 'relation') {
+      reminder.relation = field.value;
+      if (field.value === 'at') reminder.minutes = 0;
+      else if (!Number.isInteger(reminder.minutes) || reminder.minutes < 1) reminder.minutes = 15;
+      const minutesField = row.querySelector('[data-reminder-field="minutes"]');
+      minutesField.value = field.value === 'at' ? '' : String(reminder.minutes || 15);
+      minutesField.disabled = field.value === 'at';
+    }
+    if (name === 'minutes') reminder.minutes = field.value === '' ? NaN : Number(field.value);
+    if (name === 'event' || name === 'relation' || name === 'minutes') {
+      setTimeout(sortDraftReminders, 0);
+    }
+  });
+  remindersList.addEventListener('input', (event) => {
+    const field = event.target.closest('[data-reminder-field]');
+    const row = field?.closest('.reminder-row');
+    if (!field || !row) return;
+    const reminder = draftReminders[Number(row.dataset.reminderIndex)];
+    if (!reminder) return;
+
+    if (field.dataset.reminderField === 'minutes') {
+      reminder.minutes = field.value === '' ? NaN : Number(field.value);
+    } else if (field.dataset.reminderField === 'content') {
+      reminder.content = field.value;
+    }
+  });
+  remindersList.addEventListener('click', (event) => {
+    if (!event.target.closest('.delete-reminder-button')) return;
+    const row = event.target.closest('.reminder-row');
+    if (!row) return;
+    draftReminders.splice(Number(row.dataset.reminderIndex), 1);
+    renderReminderRows();
+  });
+  importFileInput.addEventListener('change', async () => {
+    const file = importFileInput.files?.[0];
+    importFileInput.value = '';
+    if (!file) return;
+
+    let previousSchedule = null;
+    let previousMetadata = null;
+    const previousPlanName = planNameInput.value;
+    const previousDraftReminders = draftReminders.map(reminder => ({ ...reminder }));
+    let snapshotCaptured = false;
+    try {
+      previousSchedule = localStorage.getItem(KEY);
+      previousMetadata = localStorage.getItem(PLAN_META_KEY);
+      snapshotCaptured = true;
+      const imported = parseImportedPlan(JSON.parse(await file.text()));
+      saveExams(imported.exams);
+      savePlanMetadata({ name: imported.name, reminders: imported.reminders });
+      planNameInput.value = imported.name;
+      draftReminders = imported.reminders.map(reminder => ({ ...reminder }));
+      syncExamDayRecords();
+      renderExamDays();
+      render();
+      editSnapshot = null;
+      returnToHome();
+    } catch (error) {
+      if (snapshotCaptured) {
+        try {
+          if (previousSchedule === null) localStorage.removeItem(KEY);
+          else localStorage.setItem(KEY, previousSchedule);
+          if (previousMetadata === null) localStorage.removeItem(PLAN_META_KEY);
+          else localStorage.setItem(PLAN_META_KEY, previousMetadata);
+          planNameInput.value = previousPlanName;
+          draftReminders = previousDraftReminders;
+          renderReminderRows();
+          syncExamDayRecords();
+          renderExamDays();
+          render();
+        } catch (restoreError) {
+          showPlanError(restoreError);
+        }
+      }
+      showPlanError(error instanceof SyntaxError ? new Error('JSON 文件格式无效') : error);
+    }
+  });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && morphState === 'open') closeAnim();
+    if (e.key === 'Escape' && morphState === 'open') cancelEditing();
   });
 })();
 
@@ -1448,6 +2054,11 @@ function renderFocus(snapshot, now) {
   const cdC = document.getElementById('focusCdC');
   const cdD = document.getElementById('focusCdD');
   const cdStatus = document.getElementById('focusStatus');
+  const cdRow = focusCdView.querySelector('.focus-cd-row');
+  const isClockMain = focusMode.main === 'clock';
+  focusClockView.style.display = isClockMain ? 'block' : 'none';
+  focusCdView.style.display = isClockMain ? 'none' : 'block';
+  cdRow.hidden = !exam;
 
   if (!exam) {
     cdLabel.textContent = '倒计时';
@@ -1466,7 +2077,7 @@ function renderFocus(snapshot, now) {
     cdC.textContent = pad(parts.mins);
     cdD.textContent = pad(parts.secs);
     [cdB, cdC, cdD].forEach(e => {
-      e.className = 'focus-cd-num' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
+      e.className = 'focus-cd-num' + (urgent ? ' urgent' : phase === 'running' ? ' running' : '');
     });
     cdStatus.textContent = statusText;
     cdStatus.className = 'focus-status ' + phase;
@@ -1478,9 +2089,12 @@ function renderFocus(snapshot, now) {
   const pipName = document.getElementById('focusPipName');
   const pipCd = document.getElementById('focusPipCd');
   const pipStatus = document.getElementById('focusPipStatus');
+  pipCd.hidden = !exam;
 
   pipClockTime.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   pipClockDate.textContent = d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate());
+  focusPipClockView.style.display = !isClockMain ? 'block' : 'none';
+  focusPipCdView.style.display = isClockMain ? 'block' : 'none';
 
   if (!exam) {
     pipLabel.textContent = '倒计时';
@@ -1495,7 +2109,7 @@ function renderFocus(snapshot, now) {
     pipName.textContent = exam.name;
     pipName.className = 'focus-pip-name ' + phase;
     pipCd.textContent = pad(parts.hrs) + ':' + pad(parts.mins) + ':' + pad(parts.secs);
-    pipCd.className = 'focus-pip-cd' + (phase === 'waiting' && urgent ? ' urgent' : phase === 'waiting' ? '' : ' ' + phase);
+    pipCd.className = 'focus-pip-cd' + (urgent ? ' urgent' : phase === 'running' ? ' running' : '');
     pipStatus.textContent = statusText;
   }
 }
@@ -1785,10 +2399,14 @@ function getDayInput(card, selector) {
   return card.querySelector(selector);
 }
 
-let examDayRecords = Array.from(new Set(getExams().map(examDateString).filter(Boolean)))
-  .sort()
-  .map(createExamDay);
-if (examDayRecords.length === 0) examDayRecords.push(createExamDay(localDateString(new Date())));
+let examDayRecords = [];
+function syncExamDayRecords() {
+  examDayRecords = Array.from(new Set(getExams().map(examDateString).filter(Boolean)))
+    .sort()
+    .map(createExamDay);
+  if (examDayRecords.length === 0) examDayRecords.push(createExamDay(localDateString(new Date())));
+}
+syncExamDayRecords();
 renderExamDays();
 
 examDays.addEventListener('change', (e) => {
