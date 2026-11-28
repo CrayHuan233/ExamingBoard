@@ -272,14 +272,14 @@ body.font-page-open { overflow: hidden; }
 }
 .reminder-row {
   display: grid;
-  grid-template-columns: 4em 3em 3em 10em 20em auto;
+  width: 100%;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr) minmax(0, 10fr) minmax(0, 20fr) auto;
   align-items: center;
   gap: 8px;
   padding: 10px;
   border: 1px solid rgb(var(--mdui-color-outline-variant));
   border-radius: 14px;
   background: rgb(var(--mdui-color-surface-container-low));
-  font-size: 14px;
 }
 .reminder-row mdui-select,
 .reminder-row mdui-text-field {
@@ -288,11 +288,6 @@ body.font-page-open { overflow: hidden; }
   --mdui-shape-corner-extra-small: 12px;
   --mdui-typescale-body-large-size: 14px;
 }
-.reminder-row [data-reminder-field="event"] { width: 4em; }
-.reminder-row [data-reminder-field="relation"],
-.reminder-row [data-reminder-field="minutes"] { width: 3em; }
-.reminder-row .reminder-main-title-field { width: 10em; }
-.reminder-row .reminder-subtitle-field { width: 20em; }
 .reminder-row mdui-select::part(text-field),
 .reminder-row mdui-text-field { height: 44px; }
 .reminder-add-button { margin-top: 12px; }
@@ -304,13 +299,6 @@ body.font-page-open { overflow: hidden; }
 .plan-actions mdui-button { min-width: 0; }
 @media (max-width: 520px) {
   .plan-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 700px) {
-  .reminder-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .reminder-row .reminder-main-title-field,
-  .reminder-row .reminder-subtitle-field { max-width: 100%; }
-  .reminder-main-title-field,
-  .reminder-subtitle-field { grid-column: 1 / -1; }
 }
 .form-row {
   display: flex;
