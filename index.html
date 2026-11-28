@@ -299,7 +299,8 @@ body.font-page-open { overflow: hidden; }
 @media (max-width: 520px) {
   .plan-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .reminder-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .reminder-content-field { grid-column: 1 / -1; }
+  .reminder-main-title-field,
+  .reminder-subtitle-field { grid-column: 1 / -1; }
 }
 .form-row {
   display: flex;
@@ -606,7 +607,7 @@ body.font-page-open { overflow: hidden; }
   vector-effect: non-scaling-stroke;
 }
 .reminder-overlay.active .reminder-progress-path {
-  animation: reminder-ring-shrink 15s linear forwards;
+  animation: reminder-ring-shrink 5s linear forwards;
 }
 @keyframes reminder-ring-shrink {
   to { stroke-dasharray: 0 1; }
@@ -1163,10 +1164,10 @@ const KEY = 'exam_schedule_v2';
 const PLAN_META_KEY = 'exam_plan_meta_v1';
 const DEFAULT_PLAN_NAME = '考试计划';
 const DEFAULT_REMINDERS = [
-  { event: 'start', relation: 'before', minutes: 15, content: '' },
-  { event: 'start', relation: 'at', minutes: 0, content: '' },
-  { event: 'end', relation: 'before', minutes: 15, content: '' },
-  { event: 'end', relation: 'at', minutes: 0, content: '' },
+  { event: 'start', relation: 'before', minutes: 15, title: '', subtitle: '' },
+  { event: 'start', relation: 'at', minutes: 0, title: '', subtitle: '' },
+  { event: 'end', relation: 'before', minutes: 15, title: '', subtitle: '' },
+  { event: 'end', relation: 'at', minutes: 0, title: '', subtitle: '' },
 ];
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -1175,12 +1176,21 @@ function getDefaultReminders() {
   return DEFAULT_REMINDERS.map(reminder => ({ ...reminder }));
 }
 
+function getDefaultReminderTitle(reminder) {
+  const eventName = reminder.event === 'start' ? '考试开始' : '考试结束';
+  if (reminder.relation === 'at') return eventName;
+  if (reminder.relation === 'before') return `距${eventName}还有${reminder.minutes}分钟`;
+  return `${eventName}已过${reminder.minutes}分钟`;
+}
+
 function normalizeReminderList(reminders) {
   if (!Array.isArray(reminders)) throw new Error('提醒列表格式无效');
   return reminders.map((reminder, index) => {
     if (!reminder || typeof reminder !== 'object'
       || !['start', 'end'].includes(reminder.event)
       || !['before', 'after', 'at'].includes(reminder.relation)
+      || (reminder.title !== undefined && typeof reminder.title !== 'string')
+      || (reminder.subtitle !== undefined && typeof reminder.subtitle !== 'string')
       || (reminder.content !== undefined && typeof reminder.content !== 'string')) {
       throw new Error(`第 ${index + 1} 条提醒格式无效`);
     }
@@ -1192,7 +1202,8 @@ function normalizeReminderList(reminders) {
       event: reminder.event,
       relation: reminder.relation,
       minutes,
-      content: reminder.content || '',
+      title: reminder.title || '',
+      subtitle: reminder.subtitle === undefined ? reminder.content || '' : reminder.subtitle,
     };
   });
 }
@@ -1321,7 +1332,7 @@ function updateReminderProgressPath() {
 }
 
 function updateReminderClock() {
-  reminderBeijingTime.textContent = '北京时间 ' + beijingTimeFormatter.format(new Date());
+  reminderBeijingTime.textContent = beijingTimeFormatter.format(new Date());
 }
 
 function showNextReminder() {
@@ -1335,9 +1346,9 @@ function showNextReminder() {
   reminderProgressPath.style.animation = '';
   updateReminderClock();
   reminderClockTimer = setInterval(updateReminderClock, 1000);
-  reminderTitle.textContent = reminder.examName + ' · ' + reminder.title;
-  reminderMessage.textContent = reminder.content;
-  reminderMessage.hidden = !reminder.content;
+  reminderTitle.textContent = reminder.title;
+  reminderMessage.textContent = reminder.subtitle;
+  reminderMessage.hidden = !reminder.subtitle;
   reminderOverlay.setAttribute('aria-hidden', 'false');
   reminderOverlay.classList.add('active');
 
@@ -1351,7 +1362,7 @@ function showNextReminder() {
       reminderIsActive = false;
       showNextReminder();
     }, 500);
-  }, 15000);
+  }, 5000);
 }
 
 function checkDueReminders(now) {
@@ -1373,13 +1384,10 @@ function checkDueReminders(now) {
       if (triggerAt <= previousCheck || triggerAt > now || firedReminderKeys.has(key)) return;
       firedReminderKeys.add(key);
 
-      const eventName = reminder.event === 'start' ? '考试开始' : '考试结束';
-      const title = reminder.relation === 'at'
-        ? eventName
-        : reminder.relation === 'before'
-          ? `距${eventName}还有${reminder.minutes}分钟`
-          : `${eventName}已过${reminder.minutes}分钟`;
-      reminderQueue.push({ examName: exam.name, title, content: reminder.content });
+      reminderQueue.push({
+        title: reminder.title.trim() || getDefaultReminderTitle(reminder),
+        subtitle: reminder.subtitle,
+      });
     });
   });
   showNextReminder();
@@ -1816,8 +1824,11 @@ document.addEventListener('visibilitychange', () => {
         <mdui-text-field label="分钟" variant="outlined" type="number" min="1"
           value="${reminder.relation === 'at' ? '' : reminder.minutes}" data-reminder-field="minutes"
           ${reminder.relation === 'at' ? 'disabled' : ''}></mdui-text-field>
-        <mdui-text-field class="reminder-content-field" label="提示内容（可空）" variant="outlined"
-          value="${escapeHtmlAttribute(reminder.content)}" data-reminder-field="content"></mdui-text-field>
+        <mdui-text-field class="reminder-main-title-field" label="主标题（留空自动）" variant="outlined"
+          placeholder="${escapeHtmlAttribute(getDefaultReminderTitle(reminder))}"
+          value="${escapeHtmlAttribute(reminder.title)}" data-reminder-field="title"></mdui-text-field>
+        <mdui-text-field class="reminder-subtitle-field" label="副标题（可空）" variant="outlined"
+          value="${escapeHtmlAttribute(reminder.subtitle)}" data-reminder-field="subtitle"></mdui-text-field>
         <mdui-button-icon class="delete-reminder-button" icon="delete_outline"
           title="删除提醒" aria-label="删除提醒"></mdui-button-icon>
       </div>
@@ -1926,7 +1937,7 @@ document.addEventListener('visibilitychange', () => {
 
   importPlanBtn.addEventListener('click', () => importFileInput.click());
   addReminderBtn.addEventListener('click', () => {
-    draftReminders.push({ event: 'start', relation: 'before', minutes: 15, content: '' });
+    draftReminders.push({ event: 'start', relation: 'before', minutes: 15, title: '', subtitle: '' });
     renderReminderRows();
   });
   remindersList.addEventListener('change', (event) => {
@@ -1948,6 +1959,8 @@ document.addEventListener('visibilitychange', () => {
     }
     if (name === 'minutes') reminder.minutes = field.value === '' ? NaN : Number(field.value);
     if (name === 'event' || name === 'relation' || name === 'minutes') {
+      const titleField = row.querySelector('[data-reminder-field="title"]');
+      if (titleField) titleField.placeholder = getDefaultReminderTitle(reminder);
       setTimeout(sortDraftReminders, 0);
     }
   });
@@ -1960,8 +1973,12 @@ document.addEventListener('visibilitychange', () => {
 
     if (field.dataset.reminderField === 'minutes') {
       reminder.minutes = field.value === '' ? NaN : Number(field.value);
-    } else if (field.dataset.reminderField === 'content') {
-      reminder.content = field.value;
+      const titleField = row.querySelector('[data-reminder-field="title"]');
+      if (titleField) titleField.placeholder = getDefaultReminderTitle(reminder);
+    } else if (field.dataset.reminderField === 'title') {
+      reminder.title = field.value;
+    } else if (field.dataset.reminderField === 'subtitle') {
+      reminder.subtitle = field.value;
     }
   });
   remindersList.addEventListener('click', (event) => {
