@@ -272,13 +272,14 @@ body.font-page-open { overflow: hidden; }
 }
 .reminder-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) minmax(110px, .8fr) minmax(110px, .7fr) minmax(180px, 1.6fr) auto;
+  grid-template-columns: 4em 3em 3em 10em 20em auto;
   align-items: center;
   gap: 8px;
   padding: 10px;
   border: 1px solid rgb(var(--mdui-color-outline-variant));
   border-radius: 14px;
   background: rgb(var(--mdui-color-surface-container-low));
+  font-size: 14px;
 }
 .reminder-row mdui-select,
 .reminder-row mdui-text-field {
@@ -287,6 +288,11 @@ body.font-page-open { overflow: hidden; }
   --mdui-shape-corner-extra-small: 12px;
   --mdui-typescale-body-large-size: 14px;
 }
+.reminder-row [data-reminder-field="event"] { width: 4em; }
+.reminder-row [data-reminder-field="relation"],
+.reminder-row [data-reminder-field="minutes"] { width: 3em; }
+.reminder-row .reminder-main-title-field { width: 10em; }
+.reminder-row .reminder-subtitle-field { width: 20em; }
 .reminder-row mdui-select::part(text-field),
 .reminder-row mdui-text-field { height: 44px; }
 .reminder-add-button { margin-top: 12px; }
@@ -298,7 +304,11 @@ body.font-page-open { overflow: hidden; }
 .plan-actions mdui-button { min-width: 0; }
 @media (max-width: 520px) {
   .plan-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
   .reminder-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reminder-row .reminder-main-title-field,
+  .reminder-row .reminder-subtitle-field { max-width: 100%; }
   .reminder-main-title-field,
   .reminder-subtitle-field { grid-column: 1 / -1; }
 }
@@ -1164,10 +1174,10 @@ const KEY = 'exam_schedule_v2';
 const PLAN_META_KEY = 'exam_plan_meta_v1';
 const DEFAULT_PLAN_NAME = '考试计划';
 const DEFAULT_REMINDERS = [
-  { event: 'start', relation: 'before', minutes: 15, title: '', subtitle: '' },
-  { event: 'start', relation: 'at', minutes: 0, title: '', subtitle: '' },
-  { event: 'end', relation: 'before', minutes: 15, title: '', subtitle: '' },
-  { event: 'end', relation: 'at', minutes: 0, title: '', subtitle: '' },
+  { event: 'start', relation: 'before', minutes: 15, title: '距考试开始还有15分钟', subtitle: '' },
+  { event: 'start', relation: 'at', minutes: 0, title: '考试开始', subtitle: '' },
+  { event: 'end', relation: 'before', minutes: 15, title: '距考试结束还有15分钟', subtitle: '' },
+  { event: 'end', relation: 'at', minutes: 0, title: '考试结束', subtitle: '' },
 ];
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -1179,8 +1189,9 @@ function getDefaultReminders() {
 function getDefaultReminderTitle(reminder) {
   const eventName = reminder.event === 'start' ? '考试开始' : '考试结束';
   if (reminder.relation === 'at') return eventName;
-  if (reminder.relation === 'before') return `距${eventName}还有${reminder.minutes}分钟`;
-  return `${eventName}已过${reminder.minutes}分钟`;
+  const minutes = Number.isInteger(reminder.minutes) && reminder.minutes > 0 ? reminder.minutes : 'xx';
+  if (reminder.relation === 'before') return `距${eventName}还有${minutes}分钟`;
+  return `${eventName}已过${minutes}分钟`;
 }
 
 function normalizeReminderList(reminders) {
@@ -1812,22 +1823,22 @@ document.addEventListener('visibilitychange', () => {
     sortDraftReminders();
     remindersList.innerHTML = draftReminders.map((reminder, index) => `
       <div class="reminder-row" data-reminder-index="${index}">
-        <mdui-select label="时间节点" variant="outlined" value="${escapeHtmlAttribute(reminder.event)}" data-reminder-field="event">
+        <mdui-select label="端点" variant="outlined" value="${escapeHtmlAttribute(reminder.event)}" data-reminder-field="event">
           <mdui-menu-item value="start">开始</mdui-menu-item>
           <mdui-menu-item value="end">结束</mdui-menu-item>
         </mdui-select>
-        <mdui-select label="触发时机" variant="outlined" value="${escapeHtmlAttribute(reminder.relation)}" data-reminder-field="relation">
+        <mdui-select label="方向" variant="outlined" value="${escapeHtmlAttribute(reminder.relation)}" data-reminder-field="relation">
           <mdui-menu-item value="before">前</mdui-menu-item>
           <mdui-menu-item value="after">后</mdui-menu-item>
           <mdui-menu-item value="at">时</mdui-menu-item>
         </mdui-select>
-        <mdui-text-field label="分钟" variant="outlined" type="number" min="1"
+        <mdui-text-field label="相对时间" variant="outlined" type="number" min="1"
           value="${reminder.relation === 'at' ? '' : reminder.minutes}" data-reminder-field="minutes"
           ${reminder.relation === 'at' ? 'disabled' : ''}></mdui-text-field>
-        <mdui-text-field class="reminder-main-title-field" label="主标题（留空自动）" variant="outlined"
+        <mdui-text-field class="reminder-main-title-field" label="主标题" variant="outlined"
           placeholder="${escapeHtmlAttribute(getDefaultReminderTitle(reminder))}"
           value="${escapeHtmlAttribute(reminder.title)}" data-reminder-field="title"></mdui-text-field>
-        <mdui-text-field class="reminder-subtitle-field" label="副标题（可空）" variant="outlined"
+        <mdui-text-field class="reminder-subtitle-field" label="副标题" variant="outlined"
           value="${escapeHtmlAttribute(reminder.subtitle)}" data-reminder-field="subtitle"></mdui-text-field>
         <mdui-button-icon class="delete-reminder-button" icon="delete_outline"
           title="删除提醒" aria-label="删除提醒"></mdui-button-icon>
@@ -1937,7 +1948,9 @@ document.addEventListener('visibilitychange', () => {
 
   importPlanBtn.addEventListener('click', () => importFileInput.click());
   addReminderBtn.addEventListener('click', () => {
-    draftReminders.push({ event: 'start', relation: 'before', minutes: 15, title: '', subtitle: '' });
+    const reminder = { event: 'start', relation: 'before', minutes: 15, title: '', subtitle: '' };
+    reminder.title = getDefaultReminderTitle(reminder);
+    draftReminders.push(reminder);
     renderReminderRows();
   });
   remindersList.addEventListener('change', (event) => {
@@ -1948,6 +1961,7 @@ document.addEventListener('visibilitychange', () => {
     if (!reminder) return;
 
     const name = field.dataset.reminderField;
+    const shouldUpdateDefaultTitle = !reminder.title || reminder.title === getDefaultReminderTitle(reminder);
     if (name === 'event') reminder.event = field.value;
     if (name === 'relation') {
       reminder.relation = field.value;
@@ -1960,6 +1974,10 @@ document.addEventListener('visibilitychange', () => {
     if (name === 'minutes') reminder.minutes = field.value === '' ? NaN : Number(field.value);
     if (name === 'event' || name === 'relation' || name === 'minutes') {
       const titleField = row.querySelector('[data-reminder-field="title"]');
+      if (shouldUpdateDefaultTitle) {
+        reminder.title = getDefaultReminderTitle(reminder);
+        if (titleField) titleField.value = reminder.title;
+      }
       if (titleField) titleField.placeholder = getDefaultReminderTitle(reminder);
       setTimeout(sortDraftReminders, 0);
     }
@@ -1972,8 +1990,13 @@ document.addEventListener('visibilitychange', () => {
     if (!reminder) return;
 
     if (field.dataset.reminderField === 'minutes') {
+      const shouldUpdateDefaultTitle = !reminder.title || reminder.title === getDefaultReminderTitle(reminder);
       reminder.minutes = field.value === '' ? NaN : Number(field.value);
       const titleField = row.querySelector('[data-reminder-field="title"]');
+      if (shouldUpdateDefaultTitle) {
+        reminder.title = getDefaultReminderTitle(reminder);
+        if (titleField) titleField.value = reminder.title;
+      }
       if (titleField) titleField.placeholder = getDefaultReminderTitle(reminder);
     } else if (field.dataset.reminderField === 'title') {
       reminder.title = field.value;
